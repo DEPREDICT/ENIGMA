@@ -16,8 +16,11 @@ print('Results stored at:', results_dir)
     Results stored at: D:\repositories\ENIGMA\results\20231103-190844
 ​    
 
-# Structural Imaging Predictors of Antidepressant Treatment Response in the ENIGMA-MDD Working Group
-In this notebook we will traverse through the data in the same order that things are discussed in the manuscript:
+*Code supplement to:*
+
+# Predicting Antidepressant Treatment Response from Cortical Structure on MRI: A Mega-Analysis from the ENIGMA-MDD Working Group
+
+This README file is an export of `main.ipynb`, the primary report on the results presented in the article with this name. In this notebook export we will traverse through the data in the same order that things are discussed in the manuscript:
 1. Load, join and clean data
 2. Data inspection and exploration
 3. Preparation of Machine Learning Set Up
