@@ -20,7 +20,7 @@ print('Results stored at:', results_dir)
 
 # Predicting Antidepressant Treatment Response from Cortical Structure on MRI: A Mega-Analysis from the ENIGMA-MDD Working Group
 
-![png](.results/20231103-190844/figures/lh_annot.png)
+![png](results/20231103-190844/figures/lh_annot.png)
 ![png](.readme/output_8_0.png)
 
 This README file is an export of `main.ipynb`, the primary report on the results presented in the article with this name. In this notebook export we will traverse through the data in the same order that things are discussed in the manuscript:
