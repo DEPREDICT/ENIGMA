@@ -14,7 +14,7 @@ print('Results stored at:', results_dir)
 ```
 
     Results stored at: D:\repositories\ENIGMA\results\20231103-190844
-    
+​    
 
 # Structural Imaging Predictors of Antidepressant Treatment Response in the ENIGMA-MDD Working Group
 In this notebook we will traverse through the data in the same order that things are discussed in the manuscript:
@@ -30,7 +30,7 @@ Each partner in the ENIGMA consortium provided three types of data:
 * `dbc` Demographic, Behavioural and Clinical patient data
 * `roi` Cortical measurements on thickness and surface area for each anatomical Region Of Interest
 * `map` A 2D projection of the surface data underlying to the `roi` data type.
-Let us start with loading and cleaning this data.
+  Let us start with loading and cleaning this data.
 
 ### 1.1 Load, join and clean data
 #### 1.1.1 Load Structured data
@@ -57,7 +57,7 @@ X_are, X_are_arr = load_proj_df(data, 'Area', dim=dim)
 
     100%|██████████| 258/258 [00:01<00:00, 136.06it/s]
     100%|██████████| 258/258 [00:02<00:00, 120.52it/s]
-    
+
 
 ### 1.2 Sanitizing and feature engineering
 #### 1.2.1 Removing zero variance pixels from 2D projection data
@@ -83,9 +83,9 @@ for ax, arr, title, cmap in zip(axes, img_arrays, titles, cmaps):
 ```
 
 
-    
+​    
 ![png](.readme/output_6_0.png)
-    
+​    
 
 
 #### 1.2.2 Normalized Symptom Severity
@@ -98,9 +98,9 @@ norm_fig.savefig(figdir.append('NormalizedSeverityScores.png'))
 ```
 
 
-    
+​    
 ![png](.readme/output_8_0.png)
-    
+​    
 
 
 Three instruments to score treatment were used across all cohorts. The following scoring methods were used per site. The method used in order of preference is MADRS, HDRS then BDI.
@@ -124,11 +124,11 @@ score_df
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -230,9 +230,9 @@ plt.show()
 ```
 
 
-    
+​    
 ![png](.readme/output_16_0.png)
-    
+​    
 
 
 Later on in this study, we present interesting findings in the Extremes subpopulation. An alternative explanation was that treatment duration could positively affect treatment outcome (longer follow up -> more chance to recover), thus that prediction in the Extremes cohort would primarily separate cohorts, and coincidentally, response and non-response. Our six cohorts do show an interesting difference among follow-up durations (see table below or table 1 in the manuscript). We roughly split them up in a group of Short treated ( < 6 weeks ) and `LongTreated` ( > 10 weeks ).
@@ -262,7 +262,7 @@ print('Long treated:\n ', duration_based_cohort_printer(True), '\nShort treated:
       AFFDIS              n=16   37.5%   5.1+0.7
       Hiroshima cohort    n=103  46.6%   6.0+0.0
       Milano OSR          n=27   55.6%   4.2+0.7
-    
+
 
 ## 2. Population and data exploration
 The ENIGMA consortium provided is with a large amount of subjects from a number of consortia. It is crucial to have a good grasp of the properties of our population as well as differences among sites for the design of our methods and the interpretation of our results
@@ -318,7 +318,7 @@ pd.concat(series_list, axis=1).fillna(0).astype(int).replace(0, '').head(12)
     After subject selection (stage 2) we have 265 subjects from 6 cohorts.
     After checking for completeness of data for ROI analysis (stage 3) we still habe 265 subjects from 6 cohorts.
     For Vec and 2D analysis, we have 258 subjects from 6 cohorts
-    
+
 
 
 
@@ -328,11 +328,11 @@ pd.concat(series_list, axis=1).fillna(0).astype(int).replace(0, '').head(12)
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -489,10 +489,10 @@ data[subc_no_icv] = data[subc_no_icv].div(data['ICV'], axis=0)
 ```
 
     The number of cortical features we found is 192 (192 = 32 ROIs × 2 maps (Thickness & Sufrace) × 3 hemispheres (Left, Right, Mean). That means there are 81 non-surface columns.
-    
+
     We also have ICV and 24 subcortical_rois: LLatVent, RLatVent, Lthal, Rthal, Lcaud, Rcaud, Lput, Rput, Lpal, Rpal, Lhippo, Rhippo, Lamyg, Ramyg, Laccumb, Raccumb, Mvent, Mthal, Mcaud, Mput, Mpal, Mhippo, Mamyg, Maccumb
     Of these 10 are unique: Accumb, Amyg, Caud, Hippo, ICV, Latvent, Pal, Put, Thal, Vent Vent, LatVent and ICV are not included, so 7 remain.
-    
+
 
 ### 2.3 General Population Characteristics
 Each data set was collected using different inclusion protocols. Thus, our the population per site can vary a lot. Let us start with group level statistics. We first create a data frame containing subject properties per site called `site_stats` using the `collect_stats_per_site` method. This data frame will be the input to the `stacked_hist` method. This method can read a column from the `site_stats` table and create a stacked histogram. In addition to `site_stats` we also receive a `site_means` table, which contains the same information but nicely formatted for printing, so let us start with that:
@@ -513,11 +513,11 @@ site_means.T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -699,11 +699,11 @@ non_vs_responders
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -841,11 +841,11 @@ response_correlates
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -936,11 +936,11 @@ adolescent_df
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -1022,9 +1022,9 @@ plt.show()
 ```
 
 
-    
+​    
 ![png](.readme/output_31_0.png)
-    
+​    
 
 
 #### 2.4.2 Symptom development over time
@@ -1054,9 +1054,9 @@ trend_fig.savefig(figdir.append('ResponseTrends.png'))
 ```
 
 
-    
+​    
 ![png](.readme/output_33_0.png)
-    
+​    
 
 
 ### 2.5 Comparing subpopulations to the total population
@@ -1080,9 +1080,9 @@ plt.show()
 ```
 
 
-    
+​    
 ![png](.readme/output_35_0.png)
-    
+​    
 
 
 
@@ -1099,11 +1099,11 @@ ss_means.T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -1207,11 +1207,11 @@ rrs_means.T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -1345,11 +1345,11 @@ extr_means.T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -1532,11 +1532,11 @@ extr_non_vs_responders
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -1658,7 +1658,7 @@ for stats_desc, stats in zip(['All', 'Responders', 'Non-responders', 'Extremes',
     Extremes                 8.93 ± 0.26
     Responding Extremes      9.95 ± 0.28
     Non-responding Extremes  7.90 ± 0.25
-    
+
 
 ## 3. Preparation of Machine Learning setup
 Our primary goal is to predict treatment response. However, we also have several sub questions for which we create five dimensions of comparisons:
@@ -1704,11 +1704,10 @@ Here is a list of the populations with explaination:
 * `GradientBoostingClassifier`
 
 ### 3.6 target_label
-* `is_responder`
-* `is_remitter`
-* `is_female`
-* `is_extreme`
-
+* `is_responder` primary outcome.
+* `is_remitter` alternative outcome.
+* `is_female` used as a sanity check.
+* `is_extreme` briefly explored since treatment response prediction in this group works, if you can predict this group beforehand, this might still be useful. But as we will find in analysis 6.3.3.2, we can't predict it.
 
 ```python
 # Some settings to our machine learning method:
@@ -1801,7 +1800,7 @@ else:
      The file contained 884 results
     Loaded aggregates file: D:\repositories\ENIGMA\results\20231103-190844\result_dict.pkl.
      The file contained 136 trained Deep Learning models
-    
+
 
 ## 4. Train Machine Learning Models
 We have set up an impressive nested dictionary of six levels, with at the deepest level data (X), labels(y) and a stratification variable (c). To train all machine learning models we loop over each item. At the deepest loop level you will find two chucks of code: the first for classical machine learning, and the second for deep learning (see `1)` and `2)`). Although it might have been nice to also create a loop for these two options, they do not share data or models, so that would not have made a lot of sense.
@@ -1877,7 +1876,7 @@ results_table = results_table.reorder_levels([5, 0, 1, 4, 3, 2])
 
 
     Elapsed: 0.5448544025421143
-    
+​    
 
 Display an example of the training process of a deep learning model as a check.
 
@@ -1920,9 +1919,9 @@ dl_fig.show()
 ```
 
 
-    
+​    
 ![png](.readme/output_48_0.png)
-    
+​    
 
 
 ## 5. Statistics
@@ -1981,8 +1980,8 @@ distiller(1)
     (6) 'LongTreated', 'Hiroshima', 'SameResponders', 'Extremes', 'All'
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
     1.is_responder    47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
-    
-    
+
+​    
 
 ### 6.2 Secondary Results
 #### 6.2.1 Design Configurations
@@ -2009,8 +2008,8 @@ distiller(2, 3, 4)
      -GradientBoos... 48.0%  | 53.0%  | 55.3%  | 0.572  | -0.586 | -1.078 
      -ResNet          47.9%  | 52.7%  | 55.0%  | 0.575  | -0.581 | -1.074 
      -SVC             47.3%  | 52.3%  | 55.3%  | 0.279  | -1.153 | -0.852 
-    
-    
+
+​    
 
 #### 6.2.2 Secondary: Effect of Leave-Site-Out CV
 This line means: present the average results for predicting response in the entire population using either K-Fold os Leave-Site-Out cross validation. `is_strict` does not have an effect here, since we do not specify any value for the level we are requesting (4 is `None`)
@@ -2024,8 +2023,8 @@ distiller(5)
     5.No Significant difference (p_val: 0.308, t_stat-1.082 BF=-8.53e-01, d=-1.24e+00) between:
      -Fold            47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
      -Site            55.3%  | 47.8%  | 43.3%  | 0.585  | 0.566  | -0.962 
-    
-    
+
+​    
 
 ### 6.3 Explorative Results
 #### 6.3.1 Performance in Subpopulations
@@ -2043,8 +2042,8 @@ distiller(6)
      -SameResponders  45.7%  | 50.2%  | 55.0%  | 0.269  | -1.178 | -0.704 
      -Extremes        68.6%  | 59.5%  | 43.3%  | 0.007* | 3.515  | 1.030  
      -All             47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
-    
-    
+
+​    
 
 ##### 6.3.3.1 Repeating our primary analyses on the Extremes Population
 
@@ -2078,8 +2077,8 @@ distiller(2, 3, 4, 5)
     5.No Significant difference (p_val: 0.964, t_stat-0.047 BF=-6.83e-01, d=-1.92e-01) between:
      -Fold            68.6%  | 59.5%  | 43.3%  | 0.007* | 3.515  | 1.030  
      -Site            68.1%  | 40.7%  | 29.9%  | 0.261  | 1.200  | -0.545 
-    
-    
+
+​    
 
 ##### 6.3.3.2 Explorative III: Prediction OF Extremes
 
@@ -2097,8 +2096,8 @@ distiller(3)
      -sub_add              59.5%  | 51.7%  | 43.4%  | 0.044* | 2.343  | 0.034  
      -sub_dbc              62.6%  | 54.3%  | 43.4%  | 0.010* | 3.251  | 1.115  
      -dbc_yes              62.5%  | 54.1%  | 43.3%  | 0.015* | 2.996  | 0.764  
-    
-    
+
+​    
 
 #### 6.3.2 Explorative II: Subcortical based Prediction
 
@@ -2114,8 +2113,8 @@ distiller(3)
     3.No Significant difference (p_val: 0.251, t_stat-1.228 BF=-8.39e-01, d=-3.34e-01) between:
      -dbc_no               47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
      -sub_add              50.5%  | 56.1%  | 55.5%  | 0.885  | 0.148  | -1.157 
-    
-    
+
+​    
 
 
 ```python
@@ -2147,8 +2146,8 @@ distiller(2, 3, 4, 5)
     5.No Significant difference (p_val: 0.377, t_stat-0.929 BF=-8.02e-01, d=-2.67e+00) between:
      -Fold            49.7%  | 65.2%  | 65.6%  | 0.930  | -0.091 | -0.901 
      -Site            63.4%  | 51.7%  | 40.7%  | 0.605  | 0.536  | -0.922 
-    
-    
+
+​    
 
 ### 6.4 Visuals of performance over several analyses
 
@@ -2223,9 +2222,9 @@ bacc_fig.savefig(figdir.append(f'bAcc_histograms.png'))
 ```
 
 
-    
+​    
 ![png](.readme/output_67_0.png)
-    
+​    
 
 
 ## Sidenotes
@@ -2298,8 +2297,8 @@ print(f'3.  The mean-balanced-accuracy (bAcc) is not the same as balanced-accura
         Mean accuracy score: 53.7% ± 9.2%, Mean null score: 55.0% ± 7.7%
         - Balanced accuracy of means:  48.8%
         - Mean of balanced accuracies: 49.5%
-    
-    
+
+​    
 
 Now previously, I have attempted to fix this by replacing in this notebook:
 ```
@@ -2338,7 +2337,7 @@ for fold_no, (train_index, test_index) in enumerate(tqdm(cv.split(X, y))):
 ```
 
     100it [00:10,  9.31it/s]
-    
+​    
 
 ## 6. Interpretarion of Cortical Results
 ### Calculate
@@ -2396,7 +2395,7 @@ for population_name, coef_dict_b in coef_dict.items():
     80it [01:34,  1.18s/it]
     80it [02:19,  1.74s/it]
     80it [00:48,  1.65it/s]
-    
+
 
 
 ```python
@@ -2440,7 +2439,7 @@ pd.concat(dfs, axis=1)
     Coefficient Look-Up-Table created for thick in Left hemisphere. (D:\repositories\ENIGMA\data\fsaverage\manual_labels\LH-LRC_thick-coefs-All.pkl)
     Coefficient Look-Up-Table created for surf in Right hemisphere. (D:\repositories\ENIGMA\data\fsaverage\manual_labels\RH-LRC_surf-coefs-All.pkl)
     Coefficient Look-Up-Table created for thick in Right hemisphere. (D:\repositories\ENIGMA\data\fsaverage\manual_labels\RH-LRC_thick-coefs-All.pkl)
-    
+
 
 
 
@@ -2450,11 +2449,11 @@ pd.concat(dfs, axis=1)
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -2719,7 +2718,7 @@ pd.DataFrame(feature_importances, index=colnames).T
 ```
 
     Coefficients as provided for imaging of the Extremes population:
-    
+​    
 
 
 
@@ -2729,11 +2728,11 @@ pd.DataFrame(feature_importances, index=colnames).T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -3034,9 +3033,9 @@ plt.show()
 ```
 
 
-    
+​    
 ![png](.readme/output_80_0.png)
-    
+​    
 
 
 
@@ -3065,12 +3064,12 @@ fig.show()
 ```
 
     100%|██████████| 258/258 [00:00<00:00, 2778.57it/s]
-    
+​    
 
 
-    
+​    
 ![png](.readme/output_81_1.png)
-    
+​    
 
 
 Note that the labeling we were provided in the ROI analysis (`aparc.DKTatlas40.annot`) is different from the labeling we were provided in the projection analysis (`aparc.a2009s.annot`) which is shown in the figure above. Also, one is not simply as subset of the other.
@@ -3136,11 +3135,11 @@ imp_dfs['All']
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -3270,11 +3269,11 @@ imp_dfs['Extremes']
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-
+    
     .dataframe tbody tr th {
         vertical-align: top;
     }
-
+    
     .dataframe thead th {
         text-align: right;
     }
@@ -3399,4 +3398,5 @@ print('finish time:', datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     start time: 20231103-190844
     finish time: 20240320-135635
-    
+
+is
