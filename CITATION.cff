@@ -3,7 +3,7 @@ authors:
   - family-names: Poirot
     given-names: Maarten G.
     orcid: https://orcid.org/0000-0003-1937-7978
-title: "Predicting Antidepressant Treatment Response from Cortical Structure on MRI: A Mega-Analysis from the ENIGMA-MDD Working Group"
+title: "Code supplement to: Predicting Antidepressant Treatment Response from Cortical Structure on MRI: A Mega-Analysis from the ENIGMA-MDD Working Group"
 version: 0.0.1
 year: 2024,
 url: "https://github.com/DEPREDICT/ENIGMA"
