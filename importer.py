@@ -26,7 +26,7 @@ warnings.filterwarnings(action='ignore', category=UserWarning)
 np.seterr(divide='ignore', invalid='ignore')  # We store None values which will raise errors in statistics and return nans, which we then omit, so the warnings are not interesting
 
 # Machine learning
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.feature_selection import SelectFromModel
 from sklearn.impute import KNNImputer
 from sklearn.linear_model import LogisticRegression

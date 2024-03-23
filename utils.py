@@ -1012,7 +1012,7 @@ class CombatWrapper:
         self.dc = discrete_covariates
         self.cc = continuous_covariates
 
-    def _get_args(self, X):
+    def _get_kwargs(self, X):
         # Remove hemisphere tag information to match the index with the covariates data sheet
         xindex = [idx.split('|')[0] for idx in X.index]
 
@@ -1024,17 +1024,18 @@ class CombatWrapper:
         # Return the appropriate discrete and continuous covariates
         disc_cov = np.array([self.data.loc[xindex][dc].values.tolist() for dc in self.dc]).T if any(self.dc) else None
         cont_cov = np.array([self.data.loc[xindex][cc].values.tolist() for cc in self.cc]).T if any(self.cc) else None
-        return site_idx, disc_cov, cont_cov
+        return {'sites': site_idx, 'discrete_covariates': disc_cov, 'continuous_covariates': cont_cov}
 
     def fit_transform(self, X, y=None):
         """Fit to data, then transform it"""
         return self.fit(X).transform(X)
 
     def fit(self, X, y=None):
-        return self.transformer.fit(X, *self._get_args(X))
+        self.transformer.fit(X, **self._get_kwargs(X))
+        return self
 
     def transform(self, X):
-        return pd.DataFrame(self.transformer.transform(X, *self._get_args(X)), index=X.index, columns=X.columns)
+        return pd.DataFrame(self.transformer.transform(X, **self._get_kwargs(X)), index=X.index, columns=X.columns)
 
 
 class RegressorWrapper:
@@ -1045,6 +1046,7 @@ class RegressorWrapper:
 
         # Set attributes
         self.data = data
+        self.continuous_covariates = continuous_covariates
         self.transformers = {cc: LinearRegression() for cc in continuous_covariates}
 
     def _get_args(self, X):
@@ -1057,28 +1059,26 @@ class RegressorWrapper:
         site_idx = [[site2idx[i]] for i in sites]
 
         # Return the appropriate discrete and continuous covariates
-        disc_cov = np.array([self.data.loc[xindex][dc].values.tolist() for dc in self.dc]).T if any(self.dc) else None
-        cont_cov = np.array([self.data.loc[xindex][cc].values.tolist() for cc in self.cc]).T if any(self.cc) else None
-        return site_idx, disc_cov, cont_cov
+        cont_cov = np.array([self.data.loc[xindex][cc].values.tolist() for cc in self.continuous_covariates]).T if any(self.continuous_covariates) else None
+        return site_idx, cont_cov
 
     def fit_transform(self, X, y=None):
         """Fit to data, then transform it"""
         return self.fit(X).transform(X)
 
     def fit(self, X, y=None):
-        # for cc, transformer in self.transformers.items():
-        #     y = self._get_args([cc])
-        #     transformer.fit(y, X)
+        for cc, transformer in self.transformers.items():
+            site_idx, cont_cov = self._get_args(X)
+            transformer.fit(cont_cov, X)
         return self
 
     def transform(self, X):
-        # residuals = []
-        # for cc, transformer in self.transformers.items():
-        #     y = self._get_args([cc])
-        #     X_pred = transformer.predict(y)
-        #     residuals.append(X_pred)
-        # return X - np.sum(residuals)
-        return X
+        residuals = []
+        for cc, transformer in self.transformers.items():
+            site_idx, cont_cov = self._get_args(X)
+            X_pred = transformer.predict(cont_cov)
+            residuals.append(X_pred)
+        return X - np.sum(residuals, axis=0)
 
 
 def to_device(*data, device=None):
