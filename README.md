@@ -55,14 +55,14 @@ Briefly on the `map` data: it represents the thickness of an individual on the s
 
 ```python
 # Remove edges and extra channel, and make it into a nice DataFrame with x,y pixel coordinates as column labels
-dim = 128
+dim = 32
 X_thc, X_thc_arr = load_proj_df(data, 'Thickness', dim=dim)
 X_are, X_are_arr = load_proj_df(data, 'Area', dim=dim)
 ```
 
-    100%|██████████| 258/258 [00:01<00:00, 136.06it/s]
-    100%|██████████| 258/258 [00:02<00:00, 120.52it/s]
-
+    100%|██████████| 258/258 [00:00<00:00, 2457.14it/s]
+    100%|██████████| 258/258 [00:00<00:00, 2457.16it/s]
+    
 
 ### 1.2 Sanitizing and feature engineering
 #### 1.2.1 Removing zero variance pixels from 2D projection data
@@ -88,9 +88,9 @@ for ax, arr, title, cmap in zip(axes, img_arrays, titles, cmaps):
 ```
 
 
-​    
-![png](.readme/output_6_0.png)
-​    
+    
+![png](output_6_0.png)
+    
 
 
 #### 1.2.2 Normalized Symptom Severity
@@ -103,9 +103,9 @@ norm_fig.savefig(figdir.append('NormalizedSeverityScores.png'))
 ```
 
 
-​    
-![png](.readme/output_8_0.png)
-​    
+    
+![png](output_8_0.png)
+    
 
 
 Three instruments to score treatment were used across all cohorts. The following scoring methods were used per site. The method used in order of preference is MADRS, HDRS then BDI.
@@ -129,11 +129,11 @@ score_df
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -235,9 +235,9 @@ plt.show()
 ```
 
 
-​    
-![png](.readme/output_16_0.png)
-​    
+    
+![png](output_16_0.png)
+    
 
 
 Later on in this study, we present interesting findings in the Extremes subpopulation. An alternative explanation was that treatment duration could positively affect treatment outcome (longer follow up -> more chance to recover), thus that prediction in the Extremes cohort would primarily separate cohorts, and coincidentally, response and non-response. Our six cohorts do show an interesting difference among follow-up durations (see table below or table 1 in the manuscript). We roughly split them up in a group of Short treated ( < 6 weeks ) and `LongTreated` ( > 10 weeks ).
@@ -267,7 +267,7 @@ print('Long treated:\n ', duration_based_cohort_printer(True), '\nShort treated:
       AFFDIS              n=16   37.5%   5.1+0.7
       Hiroshima cohort    n=103  46.6%   6.0+0.0
       Milano OSR          n=27   55.6%   4.2+0.7
-
+    
 
 ## 2. Population and data exploration
 The ENIGMA consortium provided is with a large amount of subjects from a number of consortia. It is crucial to have a good grasp of the properties of our population as well as differences among sites for the design of our methods and the interpretation of our results
@@ -286,7 +286,7 @@ df_stg2 = pd.read_csv(path_dbc, index_col='SubjID', sep=';')
 df_stg3 = data
 # For Stage 4 we need to edit our projections data frame a bit
 df_stg4 = X_thc.loc[[i for i in X_thc.index if 'LH' in i]]
-df_stg4.index = df_stg4.index.map(lambda x: x.split('|')[0])
+df_stg4.index = df_stg4.index.map(lambda tag: tag.split('|')[0])
 
 # Get the sites, and the data that are in each of the three steps
 dfs = df_stg1, df_stg2, data, df_stg4,
@@ -323,7 +323,7 @@ pd.concat(series_list, axis=1).fillna(0).astype(int).replace(0, '').head(12)
     After subject selection (stage 2) we have 265 subjects from 6 cohorts.
     After checking for completeness of data for ROI analysis (stage 3) we still habe 265 subjects from 6 cohorts.
     For Vec and 2D analysis, we have 258 subjects from 6 cohorts
-
+    
 
 
 
@@ -333,11 +333,11 @@ pd.concat(series_list, axis=1).fillna(0).astype(int).replace(0, '').head(12)
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -494,10 +494,10 @@ data[subc_no_icv] = data[subc_no_icv].div(data['ICV'], axis=0)
 ```
 
     The number of cortical features we found is 192 (192 = 32 ROIs × 2 maps (Thickness & Sufrace) × 3 hemispheres (Left, Right, Mean). That means there are 81 non-surface columns.
-
+    
     We also have ICV and 24 subcortical_rois: LLatVent, RLatVent, Lthal, Rthal, Lcaud, Rcaud, Lput, Rput, Lpal, Rpal, Lhippo, Rhippo, Lamyg, Ramyg, Laccumb, Raccumb, Mvent, Mthal, Mcaud, Mput, Mpal, Mhippo, Mamyg, Maccumb
     Of these 10 are unique: Accumb, Amyg, Caud, Hippo, ICV, Latvent, Pal, Put, Thal, Vent Vent, LatVent and ICV are not included, so 7 remain.
-
+    
 
 ### 2.3 General Population Characteristics
 Each data set was collected using different inclusion protocols. Thus, our the population per site can vary a lot. Let us start with group level statistics. We first create a data frame containing subject properties per site called `site_stats` using the `collect_stats_per_site` method. This data frame will be the input to the `stacked_hist` method. This method can read a column from the `site_stats` table and create a stacked histogram. In addition to `site_stats` we also receive a `site_means` table, which contains the same information but nicely formatted for printing, so let us start with that:
@@ -518,11 +518,11 @@ site_means.T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -704,11 +704,11 @@ non_vs_responders
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -846,11 +846,11 @@ response_correlates
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -941,11 +941,11 @@ adolescent_df
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -1027,9 +1027,9 @@ plt.show()
 ```
 
 
-​    
-![png](.readme/output_31_0.png)
-​    
+    
+![png](output_31_0.png)
+    
 
 
 #### 2.4.2 Symptom development over time
@@ -1059,9 +1059,9 @@ trend_fig.savefig(figdir.append('ResponseTrends.png'))
 ```
 
 
-​    
-![png](.readme/output_33_0.png)
-​    
+    
+![png](output_33_0.png)
+    
 
 
 ### 2.5 Comparing subpopulations to the total population
@@ -1085,9 +1085,9 @@ plt.show()
 ```
 
 
-​    
-![png](.readme/output_35_0.png)
-​    
+    
+![png](output_35_0.png)
+    
 
 
 
@@ -1104,11 +1104,11 @@ ss_means.T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -1212,11 +1212,11 @@ rrs_means.T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -1350,11 +1350,11 @@ extr_means.T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -1537,11 +1537,11 @@ extr_non_vs_responders
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -1663,7 +1663,7 @@ for stats_desc, stats in zip(['All', 'Responders', 'Non-responders', 'Extremes',
     Extremes                 8.93 ± 0.26
     Responding Extremes      9.95 ± 0.28
     Non-responding Extremes  7.90 ± 0.25
-
+    
 
 ## 3. Preparation of Machine Learning setup
 Our primary goal is to predict treatment response. However, we also have several sub questions for which we create five dimensions of comparisons:
@@ -1707,13 +1707,13 @@ Here is a list of the populations with explaination:
 * `LogisticRegression`
 * `SVC`
 * `GradientBoostingClassifier`
-* `RandomForestClassifier`
 
 ### 3.6 target_label
 * `is_responder` primary outcome.
 * `is_remitter` alternative outcome.
 * `is_female` used as a sanity check.
 * `is_extreme` briefly explored since treatment response prediction in this group works, if you can predict this group beforehand, this might still be useful. But as we will find in analysis 6.3.3.2, we can't predict it.
+
 
 ```python
 # Some settings to our machine learning method:
@@ -1775,12 +1775,13 @@ cv_schemes = {'Fold': (RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_re
 classifiers     = LogisticRegression(max_iter=500),\
                   SVC(),\
                   GradientBoostingClassifier(),\
-                  RandomForestClassifier(),
+                  RandomForestClassifier(),\
 
 # Define other pipeline components
 regressor       = RegressorWrapper(data=data, continuous_covariates=['Age', 'Age2'])
 imputer         = PipeWrapper(KNNImputer)
 selector        = SelectFromModel(LinearSVC(penalty="l1", dual=False, max_iter=20000), threshold=0)
+#selector       = SelectKBest()
 scaler          = PipeWrapper(StandardScaler)
 
 # Define Deep Learning model
@@ -1802,11 +1803,11 @@ else:
   print(f'Created new results file: {results_file}')
 ```
 
-    Loaded results file: D:\repositories\ENIGMA\results\20231103-190844\result_dict.pkl.
-     The file contained 884 results
-    Loaded aggregates file: D:\repositories\ENIGMA\results\20231103-190844\result_dict.pkl.
+    Loaded results file: D:\repositories\ENIGMA_lean\results\20231103-190844\result_dict.pkl.
+     The file contained 1156 results
+    Loaded aggregates file: D:\repositories\ENIGMA_lean\results\20231103-190844\result_dict.pkl.
      The file contained 136 trained Deep Learning models
-
+    
 
 ## 4. Train Machine Learning Models
 We have set up an impressive nested dictionary of six levels, with at the deepest level data (X), labels(y) and a stratification variable (c). To train all machine learning models we loop over each item. At the deepest loop level you will find two chucks of code: the first for classical machine learning, and the second for deep learning (see `1)` and `2)`). Although it might have been nice to also create a loop for these two options, they do not share data or models, so that would not have made a lot of sense.
@@ -1881,8 +1882,8 @@ results_table = results_table.reorder_levels([5, 0, 1, 4, 3, 2])
     VBox(children=(IntProgress(value=0, bar_style='info', description='Progress:', layout=Layout(width='50%'), max…
 
 
-    Elapsed: 0.5448544025421143
-​    
+    Elapsed: 0.8869764804840088
+    
 
 Display an example of the training process of a deep learning model as a check.
 
@@ -1925,9 +1926,9 @@ dl_fig.show()
 ```
 
 
-​    
-![png](.readme/output_48_0.png)
-​    
+    
+![png](output_48_0.png)
+    
 
 
 ## 5. Statistics
@@ -1938,10 +1939,13 @@ These statistics are: population size, T-statisic, p-value, Bayes factor and Eff
 ```python
 stat_values = []
 for multiindex, (null, score) in results_table.iterrows():
-  _, dtype, _, _, cv_name, population_name = multiindex
+  target_label, dtype, dbc_opt, _, cv_name, population_name = multiindex
   pop_idxs = population_indices[population_name]['roi'] if dtype == 'roi' else population_indices[population_name]['vec']
   n_subjs = len(pop_idxs)
   if isinstance(null, Iterable) and not np.isnan(score).all():
+    if len(null) == 0:
+        val = data_dict[dtype][dbc_opt][population_name][1][target_label].mean()
+        null = [val] * len(score)
     k = n_splits if cv_name == 'Fold' else len(null)
     tstat, pval = corr_rep_kfold_cv_test(score, null, k, n_subjs)
     bf = bayesfactor_ttest(tstat, nx=n_subjs, paired=True)
@@ -1978,16 +1982,16 @@ distiller = TableDistiller(cortical_results, 'is_responder', None, 'dbc_no', Non
 distiller(1)
 ```
 
-    (1) 'is_responder', 'is_extreme', 'is_female', 'is_remitter'
-    (2) '2DT', 'roi', 'vec', '2DA'
-    (3) 'dbc_yes', 'dbc_no'
-    (4) 'GradientBoostingClassifier', 'ResNet', 'SVC'
+    (1) 'is_responder', 'is_remitter', 'is_female', 'is_extreme'
+    (2) 'vec', '2DT', '2DA', 'roi'
+    (3) 'dbc_no', 'dbc_yes'
+    (4) 'RandomForestClassifier', 'GradientBoostingClassifier', 'ResNet', 'SVC'
     (5) 'Fold', 'Site'
-    (6) 'LongTreated', 'Hiroshima', 'SameResponders', 'Extremes', 'All'
+    (6) 'All', 'SameResponders', 'Hiroshima', 'Extremes', 'LongTreated'
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    1.is_responder    47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
-
-​    
+    1.is_responder    47.6%  | 52.5%  | 55.2%  | 0.439  | -0.810 | -0.992 
+    
+    
 
 ### 6.2 Secondary Results
 #### 6.2.1 Design Configurations
@@ -2000,23 +2004,23 @@ distiller(2, 3, 4)
 ```
 
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    2.No Significant difference (p_val: 0.409, F=0.9975) among:
-     -2DT             48.8%  | 53.7%  | 55.0%  | 0.722  | -0.367 | -1.128 
-     -roi             47.5%  | 52.7%  | 55.5%  | 0.443  | -0.802 | -1.024 
+    2.No Significant difference (p_val: 0.366, F=1.1016) among:
      -vec             47.8%  | 52.6%  | 55.0%  | 0.373  | -0.937 | -0.905 
+     -2DT             48.8%  | 53.7%  | 55.0%  | 0.722  | -0.367 | -1.128 
      -2DA             47.0%  | 51.8%  | 55.0%  | 0.447  | -0.795 | -1.021 
+     -roi             47.2%  | 52.3%  | 55.5%  | 0.403  | -0.877 | -0.995 
     
-    3.No Significant difference (p_val: 0.875, t_stat0.162 BF=-1.07e+00, d=6.14e-02) between:
-     -dbc_yes         48.4%  | 53.5%  | 55.3%  | 0.539  | -0.638 | -0.973 
-     -dbc_no          47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
+    3.No Significant difference (p_val: 0.786, t_stat-0.279 BF=-1.06e+00, d=-9.68e-02) between:
+     -dbc_no          47.6%  | 52.5%  | 55.2%  | 0.439  | -0.810 | -0.992 
+     -dbc_yes         48.4%  | 53.5%  | 55.3%  | 0.566  | -0.595 | -1.014 
     
-    4.No Significant difference (p_val: 0.555, F=0.6075) among:
+    4.No Significant difference (p_val: 0.389, F=1.0446) among:
      -RandomForest... 46.5%  | 51.7%  | 55.5%  | 0.331  | -1.029 | -0.936 
      -GradientBoos... 48.0%  | 53.0%  | 55.3%  | 0.572  | -0.586 | -1.078 
      -ResNet          47.9%  | 52.7%  | 55.0%  | 0.575  | -0.581 | -1.074 
      -SVC             47.3%  | 52.3%  | 55.3%  | 0.279  | -1.153 | -0.852 
-
-​    
+    
+    
 
 #### 6.2.2 Secondary: Effect of Leave-Site-Out CV
 This line means: present the average results for predicting response in the entire population using either K-Fold os Leave-Site-Out cross validation. `is_strict` does not have an effect here, since we do not specify any value for the level we are requesting (4 is `None`)
@@ -2027,11 +2031,11 @@ distiller(5)
 ```
 
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    5.No Significant difference (p_val: 0.308, t_stat-1.082 BF=-8.53e-01, d=-1.24e+00) between:
-     -Fold            47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
-     -Site            55.3%  | 47.8%  | 43.3%  | 0.585  | 0.566  | -0.962 
-
-​    
+    5.No Significant difference (p_val: 0.332, t_stat-1.026 BF=-8.85e-01, d=-1.18e+00) between:
+     -Fold            47.6%  | 52.5%  | 55.2%  | 0.439  | -0.810 | -0.992 
+     -Site            53.6%  | 46.4%  | 43.3%  | 0.703  | 0.394  | -1.018 
+    
+    
 
 ### 6.3 Explorative Results
 #### 6.3.1 Performance in Subpopulations
@@ -2043,14 +2047,14 @@ distiller(6)
 ```
 
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    6.Significant difference (p_val: 6.5e-19, F=99.0547) among:
-     -LongTreated     49.7%  | 65.2%  | 65.6%  | 0.930  | -0.091 | -0.901 
-     -Hiroshima       45.4%  | 48.5%  | 53.5%  | 0.423  | -0.840 | -0.751 
-     -SameResponders  45.7%  | 50.2%  | 55.0%  | 0.269  | -1.178 | -0.704 
-     -Extremes        68.6%  | 59.5%  | 43.3%  | 0.007* | 3.515  | 1.030  
-     -All             47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
-
-​    
+    6.Significant difference (p_val: 3.3e-20, F=118.7193) among:
+     -All             47.6%  | 52.5%  | 55.2%  | 0.439  | -0.810 | -0.992 
+     -SameResponders  45.5%  | 50.0%  | 55.0%  | 0.245  | -1.244 | -0.680 
+     -Hiroshima       44.6%  | 47.6%  | 53.4%  | 0.353  | -0.978 | -0.699 
+     -Extremes        69.5%  | 60.1%  | 43.3%  | 0.005* | 3.646  | 1.175  
+     -LongTreated     49.4%  | 64.8%  | 65.6%  | 0.849  | -0.195 | -0.908 
+    
+    
 
 ##### 6.3.3.1 Repeating our primary analyses on the Extremes Population
 
@@ -2063,29 +2067,30 @@ distiller(2, 3, 4, 5)
 ```
 
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    1.is_responder    68.6%  | 59.5%  | 43.3%  | 0.007* | 3.515  | 1.030  
+    1.is_responder    69.5%  | 60.1%  | 43.3%  | 0.005* | 3.646  | 1.175  
     
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    2.Significant difference (p_val: 2.0e-07, F=22.0452) among:
+    2.Significant difference (p_val: 1.6e-07, F=22.5378) among:
+     -vec             71.3%  | 62.8%  | 44.1%  | 0.002* | 4.491  | 1.395  
      -2DT             69.5%  | 61.2%  | 44.1%  | 0.015* | 2.987  | 0.824  
-     -roi             74.2%  | 62.1%  | 41.9%  | 0.002* | 4.201  | 1.986  
-     -vec             69.5%  | 61.3%  | 44.1%  | 0.002* | 4.350  | 1.093  
      -2DA             55.4%  | 48.8%  | 44.1%  | 0.344  | 0.998  | -0.800 
+     -roi             72.5%  | 60.7%  | 41.9%  | 0.004* | 3.903  | 1.730  
     
-    3.No Significant difference (p_val: 0.204, t_stat1.370 BF=-5.39e-01, d=3.23e-01) between:
-     -dbc_yes         77.7%  | 66.8%  | 43.0%  |4.4e-04*| 5.384  | 1.580  
-     -dbc_no          68.6%  | 59.5%  | 43.3%  | 0.007* | 3.515  | 1.030  
+    3.No Significant difference (p_val: 0.259, t_stat-1.204 BF=-4.88e-01, d=-3.02e-01) between:
+     -dbc_no          69.5%  | 60.1%  | 43.3%  | 0.005* | 3.646  | 1.175  
+     -dbc_yes         77.3%  | 66.4%  | 43.0%  |6.1e-04*| 5.147  | 1.720  
     
-    4.Significant difference (p_val: 1.5e-08, F=57.7705) among:
+    4.Significant difference (p_val: 3.9e-09, F=32.7075) among:
+     -RandomForest... 72.1%  | 62.0%  | 43.0%  | 0.003* | 4.039  | 1.609  
      -GradientBoos... 66.5%  | 57.2%  | 43.0%  | 0.012* | 3.123  | 1.079  
      -ResNet          62.4%  | 55.0%  | 44.1%  | 0.078* | 1.992  | 0.012  
      -SVC             77.0%  | 66.2%  | 43.0%  |4.2e-04*| 5.429  | 2.000  
     
-    5.No Significant difference (p_val: 0.964, t_stat-0.047 BF=-6.83e-01, d=-1.92e-01) between:
-     -Fold            68.6%  | 59.5%  | 43.3%  | 0.007* | 3.515  | 1.030  
-     -Site            68.1%  | 40.7%  | 29.9%  | 0.261  | 1.200  | -0.545 
-
-​    
+    5.No Significant difference (p_val: 0.958, t_stat0.054 BF=-7.26e-01, d=-1.19e-01) between:
+     -Fold            69.5%  | 60.1%  | 43.3%  | 0.005* | 3.646  | 1.175  
+     -Site            68.7%  | 41.0%  | 29.8%  | 0.204  | 1.371  | -0.474 
+    
+    
 
 ##### 6.3.3.2 Explorative III: Prediction OF Extremes
 
@@ -2096,15 +2101,15 @@ distiller(3)
 ```
 
                             bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    3.Significant difference (p_val: 2.5e-07, F=11.7981) among:
-     -dbc_no               61.0%  | 52.8%  | 43.2%  | 0.027* | 2.629  | 0.359  
-     -sub_all              62.6%  | 54.3%  | 43.4%  | 0.010* | 3.257  | 1.130  
-     -sub_nly              57.6%  | 50.0%  | 43.4%  | 0.087* | 1.924  | -0.286 
-     -sub_add              59.5%  | 51.7%  | 43.4%  | 0.044* | 2.343  | 0.034  
-     -sub_dbc              62.6%  | 54.3%  | 43.4%  | 0.010* | 3.251  | 1.115  
-     -dbc_yes              62.5%  | 54.1%  | 43.3%  | 0.015* | 2.996  | 0.764  
-
-​    
+    3.Significant difference (p_val: 7.6e-07, F=10.7611) among:
+     -sub_nly              58.4%  | 50.6%  | 43.4%  | 0.066* | 2.091  | -0.161 
+     -sub_all              62.5%  | 54.3%  | 43.4%  | 0.012* | 3.113  | 0.929  
+     -dbc_no               60.7%  | 52.5%  | 43.2%  | 0.030* | 2.573  | 0.294  
+     -sub_dbc              63.0%  | 54.6%  | 43.4%  | 0.009* | 3.332  | 1.210  
+     -dbc_yes              62.1%  | 53.7%  | 43.3%  | 0.017* | 2.905  | 0.647  
+     -sub_add              59.7%  | 51.8%  | 43.4%  | 0.045* | 2.329  | 0.010  
+    
+    
 
 #### 6.3.2 Explorative II: Subcortical based Prediction
 
@@ -2117,11 +2122,11 @@ distiller(3)
 ```
 
                             bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    3.No Significant difference (p_val: 0.251, t_stat-1.228 BF=-8.39e-01, d=-3.34e-01) between:
-     -dbc_no               47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
-     -sub_add              50.5%  | 56.1%  | 55.5%  | 0.885  | 0.148  | -1.157 
-
-​    
+    3.No Significant difference (p_val: 0.195, t_stat-1.402 BF=-7.29e-01, d=-3.90e-01) between:
+     -dbc_no               47.6%  | 52.5%  | 55.2%  | 0.439  | -0.810 | -0.992 
+     -sub_add              50.8%  | 56.4%  | 55.5%  | 0.822  | 0.232  | -1.148 
+    
+    
 
 
 ```python
@@ -2132,29 +2137,30 @@ distiller(2, 3, 4, 5)
 ```
 
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    1.is_responder    49.7%  | 65.2%  | 65.6%  | 0.930  | -0.091 | -0.901 
+    1.is_responder    49.4%  | 64.8%  | 65.6%  | 0.849  | -0.195 | -0.908 
     
                        bacc  |  acc   |  null  | p_val  | t_stat | L10BF  
-    2.Significant difference (p_val: 5.8e-06, F=15.0800) among:
+    2.Significant difference (p_val: 1.7e-04, F=9.6090) among:
+     -vec             51.6%  | 67.7%  | 65.6%  | 0.677  | 0.430  | -0.885 
      -2DT             46.9%  | 61.6%  | 65.6%  | 0.361  | -0.963 | -0.796 
-     -roi             49.1%  | 64.4%  | 65.6%  | 0.785  | -0.281 | -0.968 
-     -vec             53.5%  | 70.2%  | 65.6%  | 0.344  | 0.999  | -0.781 
      -2DA             50.1%  | 65.7%  | 65.6%  | 0.943  | 0.074  | -0.991 
+     -roi             48.5%  | 63.6%  | 65.6%  | 0.666  | -0.446 | -0.934 
     
-    3.No Significant difference (p_val: 0.610, t_stat-0.528 BF=-8.44e-01, d=-1.24e-01) between:
-     -dbc_yes         49.7%  | 65.2%  | 65.6%  | 0.838  | -0.211 | -0.829 
-     -dbc_no          49.7%  | 65.2%  | 65.6%  | 0.930  | -0.091 | -0.901 
+    3.No Significant difference (p_val: 0.795, t_stat0.268 BF=-8.98e-01, d=6.39e-02) between:
+     -dbc_no          49.4%  | 64.8%  | 65.6%  | 0.849  | -0.195 | -0.908 
+     -dbc_yes         49.4%  | 64.8%  | 65.6%  | 0.805  | -0.254 | -0.881 
     
-    4.Significant difference (p_val: 0.014, F=5.4197) among:
+    4.Significant difference (p_val: 0.003, F=6.1384) among:
+     -RandomForest... 48.6%  | 63.7%  | 65.6%  | 0.658  | -0.457 | -0.926 
      -GradientBoos... 51.0%  | 66.8%  | 65.6%  | 0.797  | 0.266  | -0.864 
      -ResNet          48.5%  | 63.6%  | 65.6%  | 0.667  | -0.445 | -0.894 
      -SVC             49.8%  | 65.3%  | 65.6%  | 0.927  | -0.095 | -0.990 
     
-    5.No Significant difference (p_val: 0.377, t_stat-0.929 BF=-8.02e-01, d=-2.67e+00) between:
-     -Fold            49.7%  | 65.2%  | 65.6%  | 0.930  | -0.091 | -0.901 
-     -Site            63.4%  | 51.7%  | 40.7%  | 0.605  | 0.536  | -0.922 
-
-​    
+    5.No Significant difference (p_val: 0.373, t_stat-0.937 BF=-8.01e-01, d=-2.78e+00) between:
+     -Fold            49.4%  | 64.8%  | 65.6%  | 0.849  | -0.195 | -0.908 
+     -Site            62.9%  | 51.3%  | 40.7%  | 0.613  | 0.524  | -0.926 
+    
+    
 
 ### 6.4 Visuals of performance over several analyses
 
@@ -2229,9 +2235,9 @@ bacc_fig.savefig(figdir.append(f'bAcc_histograms.png'))
 ```
 
 
-​    
-![png](.readme/output_67_0.png)
-​    
+    
+![png](output_67_0.png)
+    
 
 
 ## Sidenotes
@@ -2298,14 +2304,14 @@ print(f'3.  The mean-balanced-accuracy (bAcc) is not the same as balanced-accura
     
     2.  In Leave-Site-Out CV of All the dominant class was mismatched 4/6 times:
         - Expected: 43.6%
-        - Measured: 43.4%
+        - Measured: 43.5%
     
     3.  The mean-balanced-accuracy (bAcc) is not the same as balanced-accuracy of the means:
         Mean accuracy score: 53.7% ± 9.2%, Mean null score: 55.0% ± 7.7%
         - Balanced accuracy of means:  48.8%
         - Mean of balanced accuracies: 49.5%
-
-​    
+    
+    
 
 Now previously, I have attempted to fix this by replacing in this notebook:
 ```
@@ -2316,35 +2322,6 @@ with
   previous_result['null'] = np.array([np.mean(y[test]) if y.mean() == 0.5 else np.mean(y[test] == y[train].mode()[0]) for train, test in list(split_null)])
 ```
 And adding a special case in the `torch_val_score` method when `if y.mean() == 0.5`. But creates an overestimation of the performance and only makes the results harder to interpret, so I have since removed them.
-
-
-```python
-n_splits = 10
-n_repeats = 10
-importance_array = np.zeros((n_splits * n_repeats, len(bool_var)))
-
-pipeline = make_pipeline(imputer, combat, scaler, selector, classifiers[0], )
-X, ys, c = data_dict['vec']['dbc_no']['Extremes']
-y = ys['is_responder']
-cv = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=0)
-
-for fold_no, (train_index, test_index) in enumerate(tqdm(cv.split(X, y))):
-  X_train, y_train = X.iloc[train_index], y.iloc[test_index]
-  y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-  clf = pipeline.fit(X_train, y_train)[-1]
-  map_imp = deepcopy(bool_var)
-  coef_counter = 0
-  for pixel_no, zero_var in enumerate(bool_var):
-    if zero_var:
-      map_imp[pixel_no] = 0
-    else:
-      map_imp[pixel_no] = clf.coef_[0][coef_counter]
-      coef_counter += 1
-  importance_array[fold_no, :] = np.array(map_imp, )
-```
-
-    100it [00:10,  9.31it/s]
-​    
 
 ## 6. Interpretarion of Cortical Results
 ### Calculate
@@ -2398,23 +2375,11 @@ for population_name, coef_dict_b in coef_dict.items():
     coef_bacc[population_name][data_type] = np.mean(accs)
 ```
 
-    80it [04:56,  3.70s/it]
     80it [01:34,  1.18s/it]
-    80it [02:19,  1.74s/it]
-    80it [00:48,  1.65it/s]
-
-
-
-```python
-coef_dict_b.keys()
-```
-
-
-
-
-    dict_keys(['dbc_no', 'sub_all'])
-
-
+    80it [00:36,  2.20it/s]
+    80it [00:31,  2.54it/s]
+    80it [00:20,  3.97it/s]
+    
 
 ### Cortical Show
 Show fancy
@@ -2442,11 +2407,11 @@ for hm in "Left", "Right": #, "Mean":
 pd.concat(dfs, axis=1)
 ```
 
-    Coefficient Look-Up-Table created for surf in Left hemisphere. (D:\repositories\ENIGMA\data\fsaverage\manual_labels\LH-LRC_surf-coefs-All.pkl)
-    Coefficient Look-Up-Table created for thick in Left hemisphere. (D:\repositories\ENIGMA\data\fsaverage\manual_labels\LH-LRC_thick-coefs-All.pkl)
-    Coefficient Look-Up-Table created for surf in Right hemisphere. (D:\repositories\ENIGMA\data\fsaverage\manual_labels\RH-LRC_surf-coefs-All.pkl)
-    Coefficient Look-Up-Table created for thick in Right hemisphere. (D:\repositories\ENIGMA\data\fsaverage\manual_labels\RH-LRC_thick-coefs-All.pkl)
-
+    Coefficient Look-Up-Table existed for surf in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_surf-coefs-All.pkl)
+    Coefficient Look-Up-Table existed for thick in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_thick-coefs-All.pkl)
+    Coefficient Look-Up-Table existed for surf in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_surf-coefs-All.pkl)
+    Coefficient Look-Up-Table existed for thick in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_thick-coefs-All.pkl)
+    
 
 
 
@@ -2456,11 +2421,11 @@ pd.concat(dfs, axis=1)
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -2478,227 +2443,227 @@ pd.concat(dfs, axis=1)
   <tbody>
     <tr>
       <th>bankssts</th>
-      <td>0.643855</td>
-      <td>0.541430</td>
-      <td>0.562666</td>
-      <td>0.507108</td>
+      <td>0.783658</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.513823</td>
     </tr>
     <tr>
       <th>caudalanteriorcingulate</th>
-      <td>0.567701</td>
-      <td>0.733235</td>
-      <td>0.522524</td>
-      <td>0.514099</td>
+      <td>0.654928</td>
+      <td>0.000000</td>
+      <td>0.005691</td>
+      <td>0.406163</td>
     </tr>
     <tr>
       <th>caudalmiddlefrontal</th>
-      <td>0.642038</td>
-      <td>0.906931</td>
-      <td>0.548492</td>
-      <td>0.600773</td>
+      <td>1.000000</td>
+      <td>0.744466</td>
+      <td>0.612941</td>
+      <td>0.196463</td>
     </tr>
     <tr>
       <th>cuneus</th>
-      <td>0.536207</td>
       <td>1.000000</td>
-      <td>0.505479</td>
-      <td>0.534859</td>
+      <td>0.000000</td>
+      <td>0.724850</td>
+      <td>0.437923</td>
     </tr>
     <tr>
       <th>fusiform</th>
-      <td>0.577333</td>
+      <td>0.774242</td>
+      <td>0.930045</td>
+      <td>0.224354</td>
       <td>1.000000</td>
-      <td>0.911493</td>
-      <td>0.539551</td>
     </tr>
     <tr>
       <th>inferiorparietal</th>
-      <td>0.551305</td>
-      <td>0.508568</td>
+      <td>0.497627</td>
       <td>1.000000</td>
-      <td>0.510214</td>
+      <td>1.000000</td>
+      <td>0.005623</td>
     </tr>
     <tr>
       <th>inferiortemporal</th>
-      <td>0.717719</td>
-      <td>1.000000</td>
-      <td>0.505413</td>
-      <td>0.519976</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.779249</td>
+      <td>0.431800</td>
     </tr>
     <tr>
       <th>isthmuscingulate</th>
-      <td>0.632802</td>
-      <td>0.572012</td>
-      <td>0.862409</td>
-      <td>0.503618</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.708125</td>
+      <td>1.000000</td>
     </tr>
     <tr>
       <th>lateraloccipital</th>
-      <td>0.530461</td>
-      <td>1.000000</td>
-      <td>0.715594</td>
-      <td>0.503964</td>
+      <td>0.540408</td>
+      <td>0.252850</td>
+      <td>0.155352</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>lateralorbitofrontal</th>
-      <td>0.668558</td>
-      <td>0.607515</td>
-      <td>0.509124</td>
-      <td>0.521879</td>
+      <td>1.000000</td>
+      <td>0.606051</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>lingual</th>
-      <td>0.522653</td>
-      <td>0.588074</td>
-      <td>0.587622</td>
-      <td>0.528006</td>
+      <td>0.551694</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>medialorbitofrontal</th>
-      <td>0.519584</td>
-      <td>0.948448</td>
-      <td>0.938133</td>
-      <td>0.516171</td>
+      <td>0.446426</td>
+      <td>0.951619</td>
+      <td>0.551535</td>
+      <td>0.200799</td>
     </tr>
     <tr>
       <th>middletemporal</th>
-      <td>0.654457</td>
-      <td>1.000000</td>
-      <td>1.000000</td>
-      <td>0.595712</td>
+      <td>0.440388</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.506616</td>
     </tr>
     <tr>
       <th>parahippocampal</th>
-      <td>0.637439</td>
-      <td>0.689611</td>
-      <td>0.608207</td>
-      <td>0.568622</td>
+      <td>1.000000</td>
+      <td>0.034678</td>
+      <td>0.000000</td>
+      <td>0.114678</td>
     </tr>
     <tr>
       <th>paracentral</th>
-      <td>0.594550</td>
-      <td>0.507223</td>
-      <td>0.511404</td>
-      <td>0.555625</td>
+      <td>0.628257</td>
+      <td>0.000000</td>
+      <td>0.004420</td>
+      <td>0.115496</td>
     </tr>
     <tr>
       <th>parsopercularis</th>
-      <td>0.768777</td>
-      <td>0.518216</td>
-      <td>0.800046</td>
-      <td>0.556458</td>
+      <td>0.053913</td>
+      <td>0.517988</td>
+      <td>0.500398</td>
+      <td>1.000000</td>
     </tr>
     <tr>
       <th>parsorbitalis</th>
-      <td>0.773963</td>
-      <td>0.659359</td>
-      <td>0.506282</td>
-      <td>0.562341</td>
+      <td>1.000000</td>
+      <td>0.021004</td>
+      <td>0.323609</td>
+      <td>0.911784</td>
     </tr>
     <tr>
       <th>parstriangularis</th>
-      <td>0.526000</td>
-      <td>0.886079</td>
-      <td>0.523878</td>
-      <td>0.514284</td>
+      <td>0.351327</td>
+      <td>0.000000</td>
+      <td>0.289549</td>
+      <td>0.484812</td>
     </tr>
     <tr>
       <th>pericalcarine</th>
-      <td>1.000000</td>
-      <td>0.576330</td>
-      <td>0.517697</td>
-      <td>0.712728</td>
+      <td>0.000000</td>
+      <td>0.294127</td>
+      <td>0.033436</td>
+      <td>0.695281</td>
     </tr>
     <tr>
       <th>postcentral</th>
-      <td>0.544196</td>
-      <td>0.531058</td>
-      <td>0.651463</td>
-      <td>0.888824</td>
+      <td>0.711414</td>
+      <td>1.000000</td>
+      <td>0.453347</td>
+      <td>1.000000</td>
     </tr>
     <tr>
       <th>posteriorcingulate</th>
-      <td>0.595649</td>
-      <td>0.556110</td>
-      <td>0.544856</td>
-      <td>0.520521</td>
+      <td>0.421288</td>
+      <td>0.701065</td>
+      <td>0.388254</td>
+      <td>1.000000</td>
     </tr>
     <tr>
       <th>precentral</th>
-      <td>0.641554</td>
-      <td>1.000000</td>
-      <td>1.000000</td>
-      <td>1.000000</td>
+      <td>0.386489</td>
+      <td>0.099390</td>
+      <td>0.237208</td>
+      <td>0.867669</td>
     </tr>
     <tr>
       <th>precuneus</th>
-      <td>0.536366</td>
-      <td>0.519335</td>
-      <td>0.530271</td>
-      <td>0.505366</td>
+      <td>0.729808</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>0.745954</td>
     </tr>
     <tr>
       <th>rostralanteriorcingulate</th>
-      <td>0.617516</td>
+      <td>0.681478</td>
       <td>1.000000</td>
-      <td>0.510781</td>
-      <td>0.516540</td>
+      <td>0.101692</td>
+      <td>0.397656</td>
     </tr>
     <tr>
       <th>rostralmiddlefrontal</th>
+      <td>0.000000</td>
+      <td>0.565065</td>
       <td>1.000000</td>
-      <td>0.683124</td>
-      <td>0.507968</td>
-      <td>0.568283</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>superiorfrontal</th>
-      <td>0.765714</td>
-      <td>0.629872</td>
-      <td>0.529095</td>
-      <td>0.526124</td>
+      <td>0.766453</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
     </tr>
     <tr>
       <th>superiorparietal</th>
-      <td>0.601274</td>
-      <td>0.516178</td>
-      <td>0.959593</td>
+      <td>0.000000</td>
+      <td>0.237547</td>
       <td>1.000000</td>
+      <td>0.000000</td>
     </tr>
     <tr>
       <th>superiortemporal</th>
-      <td>0.633277</td>
-      <td>0.627581</td>
-      <td>0.520408</td>
-      <td>0.538635</td>
+      <td>0.000000</td>
+      <td>0.994771</td>
+      <td>0.205844</td>
+      <td>0.698352</td>
     </tr>
     <tr>
       <th>frontalpole</th>
-      <td>1.000000</td>
-      <td>0.737784</td>
-      <td>0.508294</td>
-      <td>0.511897</td>
+      <td>0.593417</td>
+      <td>0.803728</td>
+      <td>0.629264</td>
+      <td>0.167300</td>
     </tr>
     <tr>
       <th>temporalpole</th>
-      <td>1.000000</td>
-      <td>1.000000</td>
-      <td>0.516982</td>
-      <td>0.529182</td>
+      <td>0.000000</td>
+      <td>0.851705</td>
+      <td>0.989610</td>
+      <td>0.016107</td>
     </tr>
     <tr>
       <th>transversetemporal</th>
-      <td>1.000000</td>
-      <td>0.618538</td>
-      <td>0.639484</td>
-      <td>1.000000</td>
+      <td>0.000000</td>
+      <td>0.466938</td>
+      <td>0.730506</td>
+      <td>0.084842</td>
     </tr>
     <tr>
       <th>insula</th>
-      <td>0.553937</td>
-      <td>0.513502</td>
-      <td>0.525954</td>
-      <td>0.777830</td>
+      <td>0.000000</td>
+      <td>0.939721</td>
+      <td>1.000000</td>
+      <td>0.930877</td>
     </tr>
   </tbody>
 </table>
@@ -2725,7 +2690,7 @@ pd.DataFrame(feature_importances, index=colnames).T
 ```
 
     Coefficients as provided for imaging of the Extremes population:
-​    
+    
 
 
 
@@ -2735,11 +2700,11 @@ pd.DataFrame(feature_importances, index=colnames).T
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -3040,9 +3005,9 @@ plt.show()
 ```
 
 
-​    
-![png](.readme/output_80_0.png)
-​    
+    
+![png](output_78_0.png)
+    
 
 
 
@@ -3070,13 +3035,13 @@ fig.tight_layout()
 fig.show()
 ```
 
-    100%|██████████| 258/258 [00:00<00:00, 2778.57it/s]
-​    
+    100%|██████████| 258/258 [00:02<00:00, 126.15it/s]
+    
 
 
-​    
-![png](.readme/output_81_1.png)
-​    
+    
+![png](output_79_1.png)
+    
 
 
 Note that the labeling we were provided in the ROI analysis (`aparc.DKTatlas40.annot`) is different from the labeling we were provided in the projection analysis (`aparc.a2009s.annot`) which is shown in the figure above. Also, one is not simply as subset of the other.
@@ -3100,6 +3065,9 @@ feature_set = ['sub_all', 'dbc_no'][0]
 imp_dfs = {}
 for population, population_coef_dict in coef_dict.items():
     bacc = np.mean(coef_bacc[population][feature_set])
+
+    # Subcortical importances
+    subc = {k: v for k, v in population_coef_dict['sub_all'].items() if k in subcortical_rois}
 
     # Apply the subcortical strip function to the index to get all unique ROIs
     no_hem_subc_rois = set(population_coef_dict[feature_set].index.map(rm_hem))
@@ -3142,11 +3110,11 @@ imp_dfs['All']
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -3163,99 +3131,99 @@ imp_dfs['All']
   <tbody>
     <tr>
       <th>pal</th>
-      <td>0.02158</td>
-      <td>0.06113</td>
-      <td>0.010613</td>
+      <td>0.023178</td>
+      <td>0.024841</td>
+      <td>0.025345</td>
     </tr>
     <tr>
       <th>accumb</th>
-      <td>0.031043</td>
-      <td>0.035328</td>
-      <td>0.017012</td>
+      <td>0.024946</td>
+      <td>0.019008</td>
+      <td>0.0246</td>
     </tr>
     <tr>
-      <th>Normalized_Pretreatment_Severity</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.081625</td>
+      <th>put</th>
+      <td>0.018786</td>
+      <td>0.019481</td>
+      <td>0.019857</td>
     </tr>
     <tr>
       <th>amyg</th>
-      <td>0.030065</td>
-      <td>0.024612</td>
-      <td>0.011932</td>
+      <td>0.020989</td>
+      <td>0.015746</td>
+      <td>0.017811</td>
     </tr>
     <tr>
       <th>thal</th>
-      <td>0.016774</td>
-      <td>0.013497</td>
-      <td>0.022554</td>
-    </tr>
-    <tr>
-      <th>is_ad</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.035715</td>
+      <td>0.016439</td>
+      <td>0.014761</td>
+      <td>0.017839</td>
     </tr>
     <tr>
       <th>hippo</th>
-      <td>0.009358</td>
-      <td>0.008916</td>
-      <td>0.013837</td>
+      <td>0.014754</td>
+      <td>0.018349</td>
+      <td>0.014963</td>
     </tr>
     <tr>
       <th>caud</th>
-      <td>0.013836</td>
-      <td>0.004597</td>
-      <td>0.009862</td>
+      <td>0.014702</td>
+      <td>0.015993</td>
+      <td>0.014829</td>
+    </tr>
+    <tr>
+      <th>LatVent</th>
+      <td>0.016252</td>
+      <td>0.014457</td>
+      <td>&lt;NA&gt;</td>
     </tr>
     <tr>
       <th>ICV</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.026178</td>
+      <td>0.020448</td>
     </tr>
     <tr>
-      <th>Age_of_Onset</th>
+      <th>vent</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.020923</td>
+      <td>0.016495</td>
     </tr>
     <tr>
-      <th>put</th>
-      <td>0.003496</td>
-      <td>0.010834</td>
-      <td>0.003349</td>
+      <th>is_recurrent</th>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
     </tr>
     <tr>
-      <th>LatVent</th>
-      <td>0.010233</td>
-      <td>0.003631</td>
+      <th>Normalized_Pretreatment_Severity</th>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <th>is_ad</th>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
     </tr>
     <tr>
       <th>Age</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.013541</td>
+      <td>&lt;NA&gt;</td>
     </tr>
     <tr>
-      <th>is_recurrent</th>
+      <th>Age_of_Onset</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.005762</td>
+      <td>&lt;NA&gt;</td>
     </tr>
     <tr>
       <th>is_female</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.003036</td>
-    </tr>
-    <tr>
-      <th>vent</th>
       <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.002267</td>
     </tr>
   </tbody>
 </table>
@@ -3276,11 +3244,11 @@ imp_dfs['Extremes']
     .dataframe tbody tr th:only-of-type {
         vertical-align: middle;
     }
-    
+
     .dataframe tbody tr th {
         vertical-align: top;
     }
-    
+
     .dataframe thead th {
         text-align: right;
     }
@@ -3296,100 +3264,100 @@ imp_dfs['Extremes']
   </thead>
   <tbody>
     <tr>
-      <th>pal</th>
-      <td>0.02158</td>
-      <td>0.06113</td>
-      <td>0.010613</td>
-    </tr>
-    <tr>
       <th>accumb</th>
-      <td>0.031043</td>
-      <td>0.035328</td>
-      <td>0.017012</td>
+      <td>0.024258</td>
+      <td>0.028595</td>
+      <td>0.027564</td>
     </tr>
     <tr>
-      <th>Normalized_Pretreatment_Severity</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.081625</td>
+      <th>pal</th>
+      <td>0.02302</td>
+      <td>0.025191</td>
+      <td>0.024253</td>
     </tr>
     <tr>
       <th>amyg</th>
-      <td>0.030065</td>
-      <td>0.024612</td>
-      <td>0.011932</td>
-    </tr>
-    <tr>
-      <th>thal</th>
-      <td>0.016774</td>
-      <td>0.013497</td>
-      <td>0.022554</td>
-    </tr>
-    <tr>
-      <th>is_ad</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.035715</td>
+      <td>0.024969</td>
+      <td>0.01858</td>
+      <td>0.018897</td>
     </tr>
     <tr>
       <th>hippo</th>
-      <td>0.009358</td>
-      <td>0.008916</td>
-      <td>0.013837</td>
+      <td>0.016199</td>
+      <td>0.015262</td>
+      <td>0.016247</td>
+    </tr>
+    <tr>
+      <th>thal</th>
+      <td>0.014678</td>
+      <td>0.016518</td>
+      <td>0.015501</td>
     </tr>
     <tr>
       <th>caud</th>
-      <td>0.013836</td>
-      <td>0.004597</td>
-      <td>0.009862</td>
+      <td>0.014686</td>
+      <td>0.012362</td>
+      <td>0.013741</td>
+    </tr>
+    <tr>
+      <th>put</th>
+      <td>0.010378</td>
+      <td>0.014761</td>
+      <td>0.011594</td>
     </tr>
     <tr>
       <th>ICV</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.026178</td>
-    </tr>
-    <tr>
-      <th>Age_of_Onset</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.020923</td>
-    </tr>
-    <tr>
-      <th>put</th>
-      <td>0.003496</td>
-      <td>0.010834</td>
-      <td>0.003349</td>
+      <td>0.029455</td>
     </tr>
     <tr>
       <th>LatVent</th>
-      <td>0.010233</td>
-      <td>0.003631</td>
+      <td>0.012923</td>
+      <td>0.011605</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <th>vent</th>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>0.011792</td>
+    </tr>
+    <tr>
+      <th>is_recurrent</th>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <th>Normalized_Pretreatment_Severity</th>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
+    </tr>
+    <tr>
+      <th>is_ad</th>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
     </tr>
     <tr>
       <th>Age</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.013541</td>
+      <td>&lt;NA&gt;</td>
     </tr>
     <tr>
-      <th>is_recurrent</th>
+      <th>Age_of_Onset</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.005762</td>
+      <td>&lt;NA&gt;</td>
     </tr>
     <tr>
       <th>is_female</th>
       <td>&lt;NA&gt;</td>
       <td>&lt;NA&gt;</td>
-      <td>0.003036</td>
-    </tr>
-    <tr>
-      <th>vent</th>
       <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.002267</td>
     </tr>
   </tbody>
 </table>
@@ -3404,4 +3372,5 @@ print('finish time:', datetime.now().strftime("%Y%m%d-%H%M%S"))
 ```
 
     start time: 20231103-190844
-    finish time: 20240320-135635
+    finish time: 20240327-145143
+    
