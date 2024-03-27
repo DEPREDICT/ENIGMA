@@ -20,7 +20,7 @@ print('Results stored at:', results_dir)
 
 # Predicting Antidepressant Treatment Response from Cortical Structure on MRI: A Mega-Analysis from the ENIGMA-MDD Working Group
 
-![png](results\20231103-190844\figures\lh_annot.png)
+![png](results/20231103-190844/figures/lh_annot.png)
 
 This README file is an export of `main.ipynb`, the primary report on the results presented in the article with this name. It is best to read this documentation in the original file in a notebook server like Jupyter. In this notebook export we will traverse through the data in the same order that things are discussed in the manuscript:
 1. Load, join and clean data
@@ -89,7 +89,7 @@ for ax, arr, title, cmap in zip(axes, img_arrays, titles, cmaps):
 
 
     
-![png](output_6_0.png)
+![png](.readme/output_6_0.png)
     
 
 
@@ -104,7 +104,7 @@ norm_fig.savefig(figdir.append('NormalizedSeverityScores.png'))
 
 
     
-![png](output_8_0.png)
+![png](.readme/output_8_0.png)
     
 
 
@@ -236,7 +236,7 @@ plt.show()
 
 
     
-![png](output_16_0.png)
+![png](.readme/output_16_0.png)
     
 
 
@@ -1028,7 +1028,7 @@ plt.show()
 
 
     
-![png](output_31_0.png)
+![png](.readme/output_31_0.png)
     
 
 
@@ -1060,7 +1060,7 @@ trend_fig.savefig(figdir.append('ResponseTrends.png'))
 
 
     
-![png](output_33_0.png)
+![png](.readme/output_33_0.png)
     
 
 
@@ -1086,7 +1086,7 @@ plt.show()
 
 
     
-![png](output_35_0.png)
+![png](.readme/output_35_0.png)
     
 
 
@@ -1927,7 +1927,7 @@ dl_fig.show()
 
 
     
-![png](output_48_0.png)
+![png](.readme/output_48_0.png)
     
 
 
@@ -2236,7 +2236,7 @@ bacc_fig.savefig(figdir.append(f'bAcc_histograms.png'))
 
 
     
-![png](output_67_0.png)
+![png](.readme/output_67_0.png)
     
 
 
@@ -3006,7 +3006,7 @@ plt.show()
 
 
     
-![png](output_78_0.png)
+![png](.readme/output_78_0.png)
     
 
 
@@ -3040,7 +3040,7 @@ fig.show()
 
 
     
-![png](output_79_1.png)
+![png](.readme/output_79_1.png)
     
 
 
