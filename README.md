@@ -43,8 +43,8 @@ We first load the data and join sheets using the `load_and_join_dfs` method, whi
 
 
 ```python
-path_roi = get_root('data', 'ENIGMA_MDD_patients-included_data-subcortical.csv')
-path_dbc = get_root('data', 'ENIGMA_MDD_patients-included_data-clinical.csv')
+path_roi = get_root('data', 'ENIGMA-MDD_patients-included_data-subcortical.csv')
+path_dbc = get_root('data', 'ENIGMA-MDD_patients-included_data-clinical.csv')
 data = load_and_join_dfs(path_dbc, path_roi)
 ```
 
