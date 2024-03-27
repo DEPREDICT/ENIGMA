@@ -1707,6 +1707,7 @@ Here is a list of the populations with explaination:
 * `LogisticRegression`
 * `SVC`
 * `GradientBoostingClassifier`
+* `RandomForestClassifier`
 
 ### 3.6 target_label
 * `is_responder` primary outcome.
@@ -1773,13 +1774,13 @@ cv_schemes = {'Fold': (RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_re
 # 5. Define classifiers to use:
 classifiers     = LogisticRegression(max_iter=500),\
                   SVC(),\
-                  GradientBoostingClassifier(),
+                  GradientBoostingClassifier(),\
+                  RandomForestClassifier(),
 
 # Define other pipeline components
 regressor       = RegressorWrapper(data=data, continuous_covariates=['Age', 'Age2'])
 imputer         = PipeWrapper(KNNImputer)
 selector        = SelectFromModel(LinearSVC(penalty="l1", dual=False, max_iter=20000), threshold=0)
-#selector       = SelectKBest()
 scaler          = PipeWrapper(StandardScaler)
 
 # Define Deep Learning model
@@ -2010,6 +2011,7 @@ distiller(2, 3, 4)
      -dbc_no          47.7%  | 52.7%  | 55.2%  | 0.459  | -0.773 | -1.001 
     
     4.No Significant difference (p_val: 0.555, F=0.6075) among:
+     -RandomForest... 46.5%  | 51.7%  | 55.5%  | 0.331  | -1.029 | -0.936 
      -GradientBoos... 48.0%  | 53.0%  | 55.3%  | 0.572  | -0.586 | -1.078 
      -ResNet          47.9%  | 52.7%  | 55.0%  | 0.575  | -0.581 | -1.074 
      -SVC             47.3%  | 52.3%  | 55.3%  | 0.279  | -1.153 | -0.852 

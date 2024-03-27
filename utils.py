@@ -1028,7 +1028,8 @@ class CombatWrapper:
 
     def fit_transform(self, X, y=None):
         """Fit to data, then transform it"""
-        return self.fit(X).transform(X)
+        self.fit(X)
+        return self.transform(X)
 
     def fit(self, X, y=None):
         self.transformer.fit(X, **self._get_kwargs(X))
@@ -1064,7 +1065,8 @@ class RegressorWrapper:
 
     def fit_transform(self, X, y=None):
         """Fit to data, then transform it"""
-        return self.fit(X).transform(X)
+        self.fit(X)
+        return self.transform(X)
 
     def fit(self, X, y=None):
         for cc, transformer in self.transformers.items():
