@@ -124,6 +124,7 @@ def collect_stats_per_site(data: pd.DataFrame):
         'is_recurrent': bool_fmt,
         'is_remitter': perc_fmt,
         'is_responder': perc_fmt,
+        'Treatment_duration': con1_fmt,
         'uses_SSRI': bool_fmt,
         'uses_SNRI': bool_fmt,
         'uses_ATYP': bool_fmt,
@@ -392,7 +393,7 @@ def clean_data_df(data_df, verbose=True, drop_old_symptom_scores=False):
 
     # Set proper type of floats
     floats = ['MADRS_post', 'HDRS_post', 'BDI_post', 'Treatment_duration', 'ADcur', 'Epi', 'MADRS_pre', 'HDRS_pre',
-              'BDI_pre', 'Sev', 'AO', 'Age']
+              'BDI_pre', 'Sev', 'AO', 'Age', 'Treatment_duration']
     for f in floats:
         data_df[f] = data_df[f].astype(float)
 
