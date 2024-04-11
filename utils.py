@@ -26,8 +26,16 @@ from pingouin import ttest, rm_anova, compute_effsize, bayesfactor_ttest
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 from pathlib import Path
+from typing import Callable
 np.seterr(divide='ignore')
 
+bool_fmt = lambda v: f'{np.sum(v):,.0f} '.rjust(3) + f'({np.mean(v):,.1%})'
+perc_fmt = lambda v: f'{np.mean(v):,.1%} ± {np.std(v):,.1%}'
+con1_fmt = lambda v: f'{np.mean(v):,.1f} ± {np.std(v):,.1f}'
+con2_fmt = lambda v: f'{np.mean(v):,.2f}'.rjust(5) + f' ± {np.std(v):,.2f}'
+int_fmt = lambda v: f'{np.mean(v):,.0f} ± {np.std(v):,.1f}'
+# void = lambda *args, **kwargs: _
+# do_nothing = lambda arg: arg
 
 def count_values(d: dict, i=0):
     """
@@ -106,11 +114,6 @@ def nested_dict_to_df(values_dict: dict) -> pd.DataFrame:
 
 
 def collect_stats_per_site(data: pd.DataFrame):
-    bool_fmt = lambda v: f'{np.sum(v):,.0f} '.ljust(3) + f'({np.mean(v):,.1%})'
-    perc_fmt = lambda v: f'{np.mean(v):,.1%} ± {np.std(v):,.1%}'
-    con1_fmt = lambda v: f'{np.mean(v):,.1f} ± {np.std(v):,.1f}'
-    con2_fmt = lambda v: f'{np.mean(v):,.2f}'.ljust(5) + f' ± {np.std(v):,.2f}'
-
     col_formatters = {  # `col_formatters` can be used for printing Pandas DataFrames nicely.
         'Cohort': '{}'.format,
         'Numel': '{:,.0f}'.format,
@@ -408,7 +411,7 @@ def clean_data_df(data_df, verbose=True, drop_old_symptom_scores=False):
     return data_df, normalize_fig
 
 
-def stacked_hist(data_frame, site_stats, name='Age', n_bins=30, ax=None, make_legend=True):
+def stacked_hist(data_frame, site_stats, name='Age', n_bins=30, ax=None, make_legend=False):
     """
     :param data_frame:
     :param site_stats:
@@ -1109,7 +1112,7 @@ def to_device(*data, device=None):
 def read_any_csv(dfp, **kwargs):
     # Automatically snifs CSV dialect
     with open(dfp) as csvfile:
-        return pd.read_csv(dfp, dialect=csv.Sniffer().sniff(csvfile.readline()))
+        return pd.read_csv(dfp, dialect=csv.Sniffer().sniff(csvfile.readline()), **kwargs)
 
 
 def get_joined_df(*df_paths, nan_threshold=10, drop_nondemographics=True, drop_site=True, verbose=True):
@@ -1263,14 +1266,15 @@ def dumb_md_formatter(*args, spacing=8) -> str:
 
 def subset_score(subset, alpha=0.05):
     sep = ';'
-    formats = '{:.1%}', '{:.1%}', '{:.1%}', '{}', '{}', '{:.3f}'
+    formats = '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{}', '{}', '{:.3f}'
 
     broken = False
     if not subset.empty:
         if not subset["score"].empty and not subset['score'].isna().all():
             sub_score = flatten(subset["score"])
             sub_null = flatten(subset["null"])
-            if np.isnan(sub_score).all(): broken = True
+            if np.isnan(sub_score).all():
+                broken = True
         else:
             broken = True
     else:
@@ -1279,7 +1283,7 @@ def subset_score(subset, alpha=0.05):
     if broken:
         formatted = sep * (len(formats) - 1)
     else:
-        sub_balanced_score = np.mean(sub_score) / np.mean(sub_null) / 2
+        sub_balanced_score = [a / b / 2 for a, b in zip(sub_score, sub_null)]
         _, p_val = stats.combine_pvalues(subset['pvalue'].dropna().astype(float))
         t_stat = np.mean(subset['tstat'])
         notice = '*' if p_val < alpha and np.mean(sub_score) > np.mean(sub_null) else ' '
@@ -1288,7 +1292,17 @@ def subset_score(subset, alpha=0.05):
         fmted_pval = f'{p_val:.3f}' if p_val > 0.001 else f'{p_val:.1e}'
         fmted_tstat = f'{t_stat:.3f}' if t_stat < 100 else f'{t_stat:.1e}'
         bf = np.mean([np.log10(x) for x in subset['bayesfactor'].dropna()])
-        values = sub_balanced_score, np.mean(sub_score), np.mean(sub_null), f'{fmted_pval}{notice}', fmted_tstat, bf,
+        values = (
+            np.mean(sub_balanced_score),
+            np.std(sub_balanced_score),
+            np.mean(sub_score),
+            np.std(sub_score),
+            np.mean(sub_null),
+            np.std(sub_null),
+            f'{fmted_pval}{notice}',
+            fmted_tstat,
+            bf,
+        )
         formatted = sep.join(formats).format(*values)
 
     return dumb_md_formatter(*formatted.split(sep)), broken
@@ -1331,7 +1345,7 @@ class TableDistiller:
     :return:
     """
 
-    def __init__(self, results_table, *args, spacing=20, n_splits=10, is_strict=False, verbose=False):
+    def __init__(self, results_table, *args, spacing=15, n_splits=10, is_strict=False, verbose=False):
         self.alpha = 0.05
         self.col_dict = {}
         for j in range(len(results_table.index[0])):
@@ -1364,7 +1378,7 @@ class TableDistiller:
         :return:
         """
         if print_head:
-            print(''.ljust(self.spacing + 1), dumb_md_formatter('bacc', 'acc', 'null', 'p_val', 't_stat', 'L10BF'))
+            print(''.ljust(self.spacing + 1), dumb_md_formatter('bacc', 'sbac', 'acc', 'sac', 'null', 'snul', 'p_val', 't_stat', 'L10BF'))
         default = deepcopy(self.global_default)
 
         if default[col_num] != slice(None) and self.is_strict:
@@ -1433,7 +1447,7 @@ class TableDistiller:
             # stats = anova(pingouin_df, dv='value', between='category')
 
             stacked_uniques = []
-            stacked_categories = []  ## adjust for repeats by aggregating them
+            stacked_categories = []  # adjust for repeats by aggregating them
             stacked_folds = []
             for cat in pingouin_df['category'].unique():
                 for fol in pingouin_df['fold'].unique():
@@ -1680,3 +1694,41 @@ class ProgressBar:
 
     def update_label(self):
         self.text_label.value = f'{self.current_value}/{self.stop} {self.desc}'
+
+
+def calc_stats_wrapper(population_indices: dict, data_dict: dict, n_splits: int) -> Callable:
+    """
+
+    Args:
+        population_indices: use for getting the sujects from the appropriate population
+        data_dict:  used for getting the null in case it is unavailable in the results_table
+        n_splits: use for getting K in statistical testing
+
+    Returns:
+
+    """
+    def calc_stats(results_table: pd.DataFrame) -> pd.DataFrame:
+        stat_values = []
+        for multiindex, (null, score) in results_table.iterrows():
+            target_label, dtype, dbc_opt, _, cv_name, population_name = multiindex
+            pop_idxs = population_indices[population_name]['roi'] if dtype == 'roi' else population_indices[population_name]['vec']
+            n_subjs = len(pop_idxs)
+            if isinstance(null, Iterable) and not np.isnan(score).all():
+                if len(null) == 0:
+                    val = data_dict[dtype][dbc_opt][population_name][1][target_label].mean()
+                    null = [val] * len(score)
+                k = n_splits if cv_name == 'Fold' else len(null)
+                tstat, pval = corr_rep_kfold_cv_test(score, null, k, n_subjs)
+                bf = bayesfactor_ttest(tstat, nx=n_subjs, paired=True)
+                bf = bf if bf < 100 else 100
+                d2 = compute_effsize(score, null, paired=True)
+            else:
+                tstat, pval, bf, d2 = [None] * 4
+            stat_values.append([n_subjs, tstat, pval, bf, d2])
+        stats_table = pd.DataFrame(
+            data=np.array(stat_values),
+            index=results_table.index,
+            columns=['population', 'tstat', 'pvalue', 'bayesfactor', 'effectsize']
+        )
+        return stats_table
+    return calc_stats

@@ -43,6 +43,12 @@ from torchvision.models import resnet18
 from torchvision.models import ResNet18_Weights
 from torch import nn
 
+# Plotting tables
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
+from utils import bool_fmt, perc_fmt, con1_fmt, con2_fmt, int_fmt, read_any_csv, calc_stats_wrapper
+
 # Visualization
 from matplotlib import font_manager
 from matplotlib import pyplot as plt
