@@ -25,6 +25,7 @@ import seaborn as sns
 from pingouin import ttest, rm_anova, compute_effsize, bayesfactor_ttest
 from scipy import stats
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from pathlib import Path
 from typing import Callable
 np.seterr(divide='ignore')
@@ -117,20 +118,21 @@ def collect_stats_per_site(data: pd.DataFrame):
     col_formatters = {  # `col_formatters` can be used for printing Pandas DataFrames nicely.
         'Cohort': '{}'.format,
         'Numel': '{:,.0f}'.format,
-        'ADcur': lambda v: f'{np.mean(v):,.1f} ± {np.std(v):,.1f}',
         'Age': lambda v: f'{np.mean(v):,.1f} ± {np.std(v):,.1f}',
-        'Age_of_Onset': con1_fmt,
+        'Treatment_duration': con1_fmt,
         'Normalized_Pretreatment_Severity': con2_fmt,
-        'Response_percentage': perc_fmt,
-        'is_extreme': bool_fmt,
+        'Age_of_Onset': con1_fmt,
         'is_female': bool_fmt,
         'is_recurrent': bool_fmt,
-        'is_remitter': perc_fmt,
-        'is_responder': perc_fmt,
-        'Treatment_duration': con1_fmt,
+        'is_responder': bool_fmt,
         'uses_SSRI': bool_fmt,
         'uses_SNRI': bool_fmt,
         'uses_ATYP': bool_fmt,
+        'is_same_responder': bool_fmt,
+        'is_extreme': bool_fmt,
+        'ADcur': lambda v: f'{np.mean(v):,.1f} ± {np.std(v):,.1f}',
+        'Response_percentage': perc_fmt,
+        'is_remitter': bool_fmt,
     }
 
     stat_cols = list(col_formatters)[2:]
@@ -149,7 +151,7 @@ def collect_stats_per_site(data: pd.DataFrame):
         site_stats.append(site_stat)
     site_stats = pd.DataFrame(site_stats, columns=col_formatters).set_index('Cohort')
 
-    # Let is create another version of this table with site statistics, where we appropriately format everything
+    # Let us create another version of this table with site statistics, where we appropriately format everything
     # for printing.
     site_means = pd.DataFrame(columns=col_formatters,
                               data=[['Total'] + [col_formatters[col](site_stats.loc['Total'][col]) for col in
@@ -366,7 +368,7 @@ def clean_data_df(data_df, verbose=True, drop_old_symptom_scores=False):
     data_df = data_df.drop(columns=[c for c in data_df.columns if 'Site' in c])  # Empty or covered by 'Cohort'
     data_df.drop(columns=['PHQ9_pre', 'PHQ9_post'])  # Empty
 
-    # Remplace empty cells by NaN
+    # Replace empty cells by NaN
     data_df = data_df.replace(' ', np.nan)
 
     # Rename and set proper type of bools
@@ -376,12 +378,12 @@ def clean_data_df(data_df, verbose=True, drop_old_symptom_scores=False):
              'Rem': 'rem',
              'Responder': 'responder',
              'Remitter': 'remitter',
-             'filter_$': None,
+             # 'filter_$': None,
              'Responder_remitter': None}
 
     if 'ICV' in data_df:
         # The following fields are present in ICV data: 123456 (str), nan (float), 123.456.789 (str)
-        # Cleaning this is was a bit tricky since .replace does not work on floats and not al strs should be / 1000
+        # Cleaning this was a bit tricky since .replace does not work on floats and not al strs should be / 1000
         data_df['ICV'] = flatten(
             [[int(i.replace('.', '')) // 1000 if '.' in i else int(i)] if isinstance(i, str) else [i] for i in
              data_df['ICV']])
@@ -391,20 +393,22 @@ def clean_data_df(data_df, verbose=True, drop_old_symptom_scores=False):
             new_items = data_df[key].astype(float)
             if new_items.max() > 1:
                 new_items = new_items.subtract(1)
+            data_df = data_df.copy()
             data_df.insert(loc=0, column='is_' + value, value=new_items.astype(bool))
+
         data_df = data_df.drop(columns=key)
 
     # Set proper type of floats
     floats = ['MADRS_post', 'HDRS_post', 'BDI_post', 'Treatment_duration', 'ADcur', 'Epi', 'MADRS_pre', 'HDRS_pre',
               'BDI_pre', 'Sev', 'AO', 'Age', 'Treatment_duration']
     for f in floats:
-        data_df[f] = data_df[f].astype(float)
+        data_df[f] = data_df[f].apply(lambda x: None if x is None else float(str(x).replace(',', '.')))
 
     # Clean some more complex columns (column separated lists of strings, and comma separated decimals
     clean_list_of_strings = lambda s: s.replace(' ', '').split(',')
     data_df.Treatment_type = data_df.Treatment_type.apply(clean_list_of_strings)
     data_df.Treatment_type_category = data_df.Treatment_type_category.apply(clean_list_of_strings)
-    data_df.Response_percentage = data_df.Response_percentage.apply(lambda s: float(s.replace(',', '.')) / 100)
+    data_df.Response_percentage = data_df.Response_percentage.apply(lambda s: float(str(s).replace(',', '.')) / 100)
     data_df['Age_of_Onset'] = data_df.AO
     data_df.drop(columns=['AO'])
     data_df, normalize_fig = normalize_scores(data_df, verbose, drop_old=drop_old_symptom_scores)
@@ -513,8 +517,28 @@ def clamp(n, minn=0, maxn=1):
         return max(min(maxn, n), minn)
 
 
-def accuracy(input, target):
-    return torch.sum(torch.argmin(input.data, 1) == target[:, 0]) / len(target)
+def torch_accuracy(input, target):
+    predicted = torch.argmin(input.data, 1)
+    target = target[:, 0]
+    accuracy = torch.sum(predicted == target) / len(target)
+    return accuracy.item()
+
+
+def torch_balanced_accuracy(input, target):
+    predicted = torch.argmin(input.data, 1)
+    target = target[:, 0]
+
+    tp = torch.sum((predicted == target) & (target == 1)).float()
+    tn = torch.sum((predicted == target) & (target == 0)).float()
+    fp = torch.sum((predicted != target) & (target == 0)).float()
+    fn = torch.sum((predicted != target) & (target == 1)).float()
+
+    sensitivity = tp / (tp + fn + 1e-7)  # Adding epsilon to avoid division by zero
+    specificity = tn / (tn + fp + 1e-7)
+
+    balanced_acc = (sensitivity + specificity) / 2.0
+
+    return balanced_acc.item()
 
 
 class TorchTrainer(BaseEstimator):
@@ -605,7 +629,7 @@ class TorchTrainer(BaseEstimator):
             val_size: float = 0.2,
             optimizer=None,
             criterion=None,
-            metrics: tuple = None,
+            metrics: dict = None,
             device: str = None,
             random_state: int = None,
             verbose: bool = True,
@@ -740,7 +764,7 @@ class TorchTrainer(BaseEstimator):
                         patience_remaining = self.patience
         if self.val_size is not None:
             self.reinstate()
-        self._is_fitted_ = True
+        self._is_fitted_ = True  # Defined outside init according to sklearn convention
         return self
 
     def reinstate(self, state_dict=None):
@@ -749,16 +773,21 @@ class TorchTrainer(BaseEstimator):
         self.subestimator.load_state_dict(state_dict)
 
     def track_performance(self, outputs, label, is_train):
-        for metric in (self.criterion,) + self.metrics:
-            part = 'train' if is_train else 'validation'
-            if hasattr(metric, '__name__'):
-                name = metric.__name__
+        part = 'train' if is_train else 'validation'
+        for metric in (self.criterion, ) + tuple(self.metrics):
+            if isinstance(metric, str):
+                m_name = metric
+                m_method = self.metrics[metric]
             else:
-                name = metric._get_name()
-            if name not in self.scores[part]:
-                self.scores[part][name] = []
-            score = metric(input=outputs, target=label).item()
-            self.scores[part][name].append(score)
+                m_method = metric
+                if hasattr(metric, '__name__'):
+                    m_name = metric.__name__
+                else:
+                    m_name = metric._get_name()
+            if m_name not in self.scores[part]:
+                self.scores[part][m_name] = []
+            score = m_method(input=outputs, target=label)
+            self.scores[part][m_name].append(score)
 
     def check_is_fitted(self):
         if hasattr(self, '_is_fitted_'):
@@ -770,10 +799,16 @@ class TorchTrainer(BaseEstimator):
             )
             raise NotFittedError(msg % {"name": type(self.subestimator).__name__})
 
-    def score(self, X, y):
+    def score(self, X, y) -> float:
+        # Returns one score, which is useful for tracking patience
         outputs = self.predict_outp(X)
-        score = self.metrics[0](outputs, self._prep(y)).item()
+        score = self.metrics[list(self.metrics.keys())[0]](outputs, self._prep(y))
         return score
+
+    def all_scores(self, X, y) -> dict:
+        # Returns all scores, which is useful for test performance
+        outputs = self.predict_outp(X)
+        return {m_name: m_method(outputs, self._prep(y)) for m_name, m_method  in self.metrics.items()}
 
     def predict_outp(self, X):
         self.check_is_fitted()
@@ -818,7 +853,8 @@ class TorchTrainer(BaseEstimator):
     @metrics.setter
     def metrics(self, metrics=None):
         if metrics is None:
-            self._metrics = accuracy,
+            metrics = {'accuracy': torch_accuracy}
+        self._metrics = metrics
 
     @property
     def criterion(self):
@@ -827,7 +863,8 @@ class TorchTrainer(BaseEstimator):
     @criterion.setter
     def criterion(self, criterion=None):
         if criterion is None:
-            self._criterion = BCEWithLogitsLoss()
+            criterion = BCEWithLogitsLoss()
+        self._criterion = criterion
 
     @property
     def optimizer(self):
@@ -916,11 +953,12 @@ def torch_val_score(pipeline, X: np.array, y: pd.Series, cv, groups, verbose=Fal
         # Fit
         pipeline_copy.fit(X_train, y_train)
         # Get measures
-        best_val = max(pipeline_copy.scores['validation']['accuracy'])
-        scores['test'].append(pipeline_copy.score(X_test, y_test))
+        best_val_index = np.argmax(pipeline_copy.scores['validation'][list(pipeline_copy.metrics.keys())[0]])
+        best_val = {metric: pipeline_copy.scores['validation'][metric][best_val_index] for metric in pipeline_copy.metrics}
+        best_train = {metric: pipeline_copy.scores['train'][metric][best_val_index] for metric in pipeline_copy.metrics}
+        scores['test'].append(pipeline_copy.all_scores(X_test, y_test))
+        scores['train'].append(best_train)
         scores['validation'].append(best_val)
-        scores['train'].append(
-            pipeline_copy.scores['train']['accuracy'][pipeline_copy.scores['validation']['accuracy'].index(best_val)])
         if y.mean() == 0.5:
             null_score = np.mean(y_test)
         else:
@@ -934,7 +972,7 @@ def torch_val_score(pipeline, X: np.array, y: pd.Series, cv, groups, verbose=Fal
             for part, dct_a in pipeline_copy.scores.items():
                 for metr, values in dct_a.items():
                     prev_result = safe_dict_get(scores, 'pipeline', part, metr)
-                    cur_result = np.array([values], )
+                    cur_result = np.array([[v if not hasattr(v, 'detach') else v.detach() for v in values]], )
                     if prev_result[metr] is None:
                         prev_result[metr] = cur_result
                     else:
@@ -998,6 +1036,21 @@ class PipeWrapper:
         return self.transform(X)
 
 
+def get_site_idx(X: pd.DataFrame) -> tuple:
+    # Remove hemisphere tag information to match the index with the covariates data sheet
+    orig_id = [idx.split('|')[0] for idx in X.index]
+
+    # Create a list of sites as int
+    sites = [x.split("_")[0] for x in orig_id]
+    site2idx = {k: v for k, v in zip(set(sites), range(len(set(sites))))}
+    site_idx = [[site2idx[i]] for i in sites]
+    return orig_id, site_idx
+
+
+def is_single_site(X: pd.DataFrame) -> bool:
+    return len(set(map(lambda x: x[0], get_site_idx(X)[1]))) == 1
+
+
 class CombatWrapper:
     """
     This Wrapper makes the NeuroCombat module useful for in SKLearn pipelines.
@@ -1017,17 +1070,10 @@ class CombatWrapper:
         self.cc = continuous_covariates
 
     def _get_kwargs(self, X):
-        # Remove hemisphere tag information to match the index with the covariates data sheet
-        xindex = [idx.split('|')[0] for idx in X.index]
-
-        # Create a list of sites as int
-        sites = [x.split("_")[0] for x in xindex]
-        site2idx = {k: v for k, v in zip(set(sites), range(len(set(sites))))}
-        site_idx = [[site2idx[i]] for i in sites]
-
-        # Return the appropriate discrete and continuous covariates
-        disc_cov = np.array([self.data.loc[xindex][dc].values.tolist() for dc in self.dc]).T if any(self.dc) else None
-        cont_cov = np.array([self.data.loc[xindex][cc].values.tolist() for cc in self.cc]).T if any(self.cc) else None
+        # Return the required discrete and continuous covariates
+        orig_id, site_idx = get_site_idx(X)
+        disc_cov = np.array([self.data.loc[orig_id][dc].values.tolist() for dc in self.dc]).T if any(self.dc) else None
+        cont_cov = np.array([self.data.loc[orig_id][cc].values.tolist() for cc in self.cc]).T if any(self.cc) else None
         return {'sites': site_idx, 'discrete_covariates': disc_cov, 'continuous_covariates': cont_cov}
 
     def fit_transform(self, X, y=None):
@@ -1036,11 +1082,18 @@ class CombatWrapper:
         return self.transform(X)
 
     def fit(self, X, y=None):
-        self.transformer.fit(X, **self._get_kwargs(X))
+        if not is_single_site(X):
+            self.transformer.fit(X, **self._get_kwargs(X))
         return self
 
     def transform(self, X):
-        return pd.DataFrame(self.transformer.transform(X, **self._get_kwargs(X)), index=X.index, columns=X.columns)
+        if is_single_site(X):
+            return X
+        X_hat = self.transformer.transform(X, **self._get_kwargs(X))
+        if np.isnan(X_hat).all():
+            return X
+        else:
+            return pd.DataFrame(X_hat, index=X.index, columns=X.columns)
 
 
 class RegressorWrapper:
@@ -1152,12 +1205,11 @@ def get_joined_df(*df_paths, nan_threshold=10, drop_nondemographics=True, drop_s
     return df
 
 
-def load_and_join_dfs(*df_paths: str) -> pd.DataFrame:
+def load_and_join_dfs(*df_paths: str, **kwargs) -> pd.DataFrame:
     # Read all dataframes
     dfs = []
     for dfp in df_paths:
-        with open(dfp) as csvfile:
-            dfs.append(pd.read_csv(dfp, dialect=csv.Sniffer().sniff(csvfile.readline()), index_col='SubjID'))
+        dfs.append(read_any_csv(dfp, **kwargs))
 
     # Join all data frames
     df = pd.concat(dfs, axis=1, join="inner")
@@ -1261,19 +1313,20 @@ def pickle_out(obj: dict, target: str):
 
 
 def dumb_md_formatter(*args, spacing=8) -> str:
-    return '|'.join([arg.center(spacing) for arg in args])
+    return f"|{'|'.join([arg.center(spacing) for arg in args])}|"
 
 
-def subset_score(subset, alpha=0.05):
+def subset_score(subset, alpha=0.05, prim_out="accuracy"):
     sep = ';'
     formats = '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{}', '{}', '{:.3f}'
 
     broken = False
     if not subset.empty:
-        if not subset["score"].empty and not subset['score'].isna().all():
-            sub_score = flatten(subset["score"])
+        if not subset[prim_out].empty and not subset[prim_out].isna().all():
+            sub_acc = flatten(subset['accuracy'])
+            sub_bacc = flatten(subset['balanced_accuracy'])
             sub_null = flatten(subset["null"])
-            if np.isnan(sub_score).all():
+            if np.isnan(sub_acc).all():
                 broken = True
         else:
             broken = True
@@ -1283,20 +1336,19 @@ def subset_score(subset, alpha=0.05):
     if broken:
         formatted = sep * (len(formats) - 1)
     else:
-        sub_balanced_score = [a / b / 2 for a, b in zip(sub_score, sub_null)]
         _, p_val = stats.combine_pvalues(subset['pvalue'].dropna().astype(float))
         t_stat = np.mean(subset['tstat'])
-        notice = '*' if p_val < alpha and np.mean(sub_score) > np.mean(sub_null) else ' '
+        notice = '*' if p_val < alpha and np.mean(sub_acc) > np.mean(sub_null) else ' '
 
         p_val = stats.t.sf(np.abs(t_stat), 10 - 1) * 2
         fmted_pval = f'{p_val:.3f}' if p_val > 0.001 else f'{p_val:.1e}'
         fmted_tstat = f'{t_stat:.3f}' if t_stat < 100 else f'{t_stat:.1e}'
         bf = np.mean([np.log10(x) for x in subset['bayesfactor'].dropna()])
         values = (
-            np.mean(sub_balanced_score),
-            np.std(sub_balanced_score),
-            np.mean(sub_score),
-            np.std(sub_score),
+            np.mean(sub_bacc),
+            np.std(sub_bacc),
+            np.mean(sub_acc),
+            np.std(sub_acc),
             np.mean(sub_null),
             np.std(sub_null),
             f'{fmted_pval}{notice}',
@@ -1345,7 +1397,7 @@ class TableDistiller:
     :return:
     """
 
-    def __init__(self, results_table, *args, spacing=15, n_splits=10, is_strict=False, verbose=False):
+    def __init__(self, results_table, *args, spacing=15, n_splits=10, is_strict=False, verbose=False, prim_out="accuracy"):
         self.alpha = 0.05
         self.col_dict = {}
         for j in range(len(results_table.index[0])):
@@ -1357,6 +1409,7 @@ class TableDistiller:
         self.is_strict = is_strict
         self.spacing = spacing
         self.results_table = results_table
+        self.prim_out = prim_out
 
     def __call__(self, *col_nums, print_head=True):
         if not col_nums:
@@ -1389,10 +1442,10 @@ class TableDistiller:
         row_strs = []
 
         good_col_vals = deepcopy(col_vals)
-        for col_val in col_vals:
+        for col_val in col_vals:  # These are the properties (eg SVG, GBC, ResNet) iterated over
             default[col_num] = col_val
             try:
-                subset = self.results_table.loc[tuple(default)].dropna()
+                subset = self.results_table.loc[tuple(default)]
             except KeyError:
                 good_col_vals.remove(col_val)
                 subset = np.ndarray(0)  # is this possible?
@@ -1409,7 +1462,7 @@ class TableDistiller:
                 row_strs.append(f'-{row_desc.ljust(self.spacing)}{row_item}\n')
 
         # Examples of when NA: train & test on Extremes, or subcortical data with deep learning
-        subsets = [s for s in subsets if not s['score'].isna().all()]
+        subsets = [s for s in subsets if not s[self.prim_out].isna().all()]
 
         # Perform statistics
         if len(subsets) <= 1:
@@ -1419,14 +1472,15 @@ class TableDistiller:
         elif len(subsets) > 2:
             # We can do this with Scipy.stats, but it does not return as many outcomes
             # stats = f_oneway(subsets)
-            subset_scores = [ss['score'] for ss in subsets]
+            subset_scores = [ss[self.prim_out] for ss in subsets]
             # So we do it with Pingouin. Shout out for the shittiest data formatting requirement!
-            # This is earlly complex because values can be None (and you cannot iterate over them
+            # This is really complex because values can be None (and you cannot iterate over them
             # and there are also different cross-validation schemes, for which the fold_n needs
-            # to be ajusted!
+            # to be adjusted!
             vals = []
             result_length_stack = []
             cats = []
+            # Pair outcomes
             for i, ss in enumerate(subset_scores):
                 for cf in ss.keys():
                     if cf in ss:
@@ -1478,17 +1532,23 @@ class TableDistiller:
                     # Skip configs not available for both (should not be possible)
                     continue
 
-                model_a_score = a.loc[subset_idx]['score']
-                model_b_score = b.loc[subset_idx]['score']
+                model_a_score = a.loc[subset_idx][self.prim_out]
+                model_b_score = b.loc[subset_idx][self.prim_out]
 
                 model_a_score = np.divide(model_a_score, a.loc[subset_idx]['null']) / 2
                 model_b_score = np.divide(model_b_score, b.loc[subset_idx]['null']) / 2
 
                 if isinstance(model_a_score, Iterable) and isinstance(model_b_score, Iterable):
                     population_n = a.iloc[r]['population']
-                    n_spl = len(model_a_score) if 'Site' in a.index[r] else self.n_splits
+                    is_site_cv = 'Site' in a.index[r]
+                    n_spl = len(model_a_score) if is_site_cv else self.n_splits
                     try:
-                        t_stat, p_value = corr_rep_kfold_cv_test(model_a_score, model_b_score, n_spl, population_n)
+                        try:
+                            t_stat, p_value = corr_rep_kfold_cv_test(model_a_score, model_b_score, n_spl, population_n)
+                        except ZeroDivisionError as e:
+                            raise ZeroDivisionError(f'{e} error\n'
+                                                    f'The number of splits/folds was probably misconfigured.\n'
+                                                    f'Currenty, n_splits = {n_spl} by {"site" if is_site_cv else "fold"}')
                     except ValueError:  # not related t-test e.g. K-fold vs Site
                         ttest_stats = ttest(model_a_score, model_b_score, paired=False)
                         t_stat, p_value = ttest_stats['T'][0], ttest_stats['p-val'][0]
@@ -1634,7 +1694,7 @@ dkt_atlas_lut = {'unknown': 1,
                  'insula': 36, }
 
 
-def make_coef_lut(coef_means: pd.Series, hm='L', property='thick', sd=None) -> dict:
+def make_coef_lut(coef_means: pd.Series, hm='L', property='thick', sd=True) -> dict:
     """
     Give me a dict with as keys label names (insula) and value coefficient value
     :param coef_per_label: pandas data series that contains a mapping from anatomical ROI (as Index) to coefficient
@@ -1643,15 +1703,20 @@ def make_coef_lut(coef_means: pd.Series, hm='L', property='thick', sd=None) -> d
     :param metric: string that denotes the coefficient to look at (either thick for thickavg or surf for surfavg)
     :return: dictionary that contains a mapping from ROI label as integer to the coefficient
     """
-
+    # Get the relevant values from the coeficient dictionary
     idx2coef = {k: v for k, v in coef_means.items() if k[0] == hm and property in k}
+
+    # I dont remember why I put this in, on first inspection, all objects have _,
+    # maybe non-symmetrical ROIs like ICV don' and it would break the next line
     idx2coef = {k: v for k, v in idx2coef.items() if '_' in k}
+
+    # Retain only ROI name
     idx2coef = {k.split('_')[1]: v for k, v in idx2coef.items()}
     idx2coef = {k: v for k, v in idx2coef.items() if k in dkt_atlas_lut}
-    if sd is None:
-        scaler = 2 * max([abs(v) for v in idx2coef.values()])  # clamp between -1 and 1
+    if sd:
+        scaler = 2 * np.std([v for k, v in coef_means.items() if property in k and k[0] == hm[0]])
     else:
-        scaler = 2 * sd
+        scaler = 2 * max([abs(v) for v in idx2coef.values()])  # clamp between -1 and 1
     coef_lut = {dkt_atlas_lut[k]: clamp(v / scaler + 0.5, 0, 1) for k, v in idx2coef.items()}  # center around 0.5
     return coef_lut
 
@@ -1696,10 +1761,11 @@ class ProgressBar:
         self.text_label.value = f'{self.current_value}/{self.stop} {self.desc}'
 
 
-def calc_stats_wrapper(population_indices: dict, data_dict: dict, n_splits: int) -> Callable:
+def calc_stats_wrapper(population_indices: dict, data_dict: dict, n_splits: int, prim_out="accuracy") -> Callable:
     """
 
     Args:
+        prim_out: the metric used for calculating statistics
         population_indices: use for getting the sujects from the appropriate population
         data_dict:  used for getting the null in case it is unavailable in the results_table
         n_splits: use for getting K in statistical testing
@@ -1709,22 +1775,22 @@ def calc_stats_wrapper(population_indices: dict, data_dict: dict, n_splits: int)
     """
     def calc_stats(results_table: pd.DataFrame) -> pd.DataFrame:
         stat_values = []
-        for multiindex, (null, score) in results_table.iterrows():
-            target_label, dtype, dbc_opt, _, cv_name, population_name = multiindex
+        for multiindex, objs in results_table.iterrows():
+            target_label, dtype, dbc_opt, _, cv_name, population_name, subj_class = multiindex
             pop_idxs = population_indices[population_name]['roi'] if dtype == 'roi' else population_indices[population_name]['vec']
             n_subjs = len(pop_idxs)
-            if isinstance(null, Iterable) and not np.isnan(score).all():
-                if len(null) == 0:
+            if isinstance(objs.null, Iterable) and not np.isnan(objs[prim_out]).all():
+                if len(objs.null) == 0:
                     val = data_dict[dtype][dbc_opt][population_name][1][target_label].mean()
-                    null = [val] * len(score)
-                k = n_splits if cv_name == 'Fold' else len(null)
-                tstat, pval = corr_rep_kfold_cv_test(score, null, k, n_subjs)
-                bf = bayesfactor_ttest(tstat, nx=n_subjs, paired=True)
+                    objs.null = [val] * len(objs[prim_out])
+                k = n_splits if cv_name == 'Fold' else len(objs.null)
+                t_stat, p_val = corr_rep_kfold_cv_test(objs[prim_out], objs.null, k, n_subjs)
+                bf = bayesfactor_ttest(t_stat, nx=n_subjs, paired=True)
                 bf = bf if bf < 100 else 100
-                d2 = compute_effsize(score, null, paired=True)
+                d2 = compute_effsize(objs[prim_out], objs.null, paired=True)
             else:
-                tstat, pval, bf, d2 = [None] * 4
-            stat_values.append([n_subjs, tstat, pval, bf, d2])
+                t_stat, p_val, bf, d2 = [None] * 4
+            stat_values.append([n_subjs, t_stat, p_val, bf, d2])
         stats_table = pd.DataFrame(
             data=np.array(stat_values),
             index=results_table.index,

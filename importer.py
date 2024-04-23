@@ -1,11 +1,12 @@
 # Base imports
 import os
 from collections.abc import Iterable
+from collections import OrderedDict
 
 # Logging and progress
 from datetime import datetime
 from copy import deepcopy
-from itertools import tee
+from itertools import tee, product
 
 # Custom classes and methods
 from classes import cohorts, colors
@@ -13,7 +14,7 @@ from utils import get_root, load_and_join_dfs, CombatWrapper, PipeWrapper, Torch
   pickle_out, pickle_in, stacked_hist, clean_data_df, make_empty_nest, get_rgb_cbar,\
   nested_dict_to_df, TableDistiller, make_coef_lut, dkt_atlas_lut, collect_stats_per_site, subpop_hists,\
   torch_val_score, safe_dict_get, load_proj_df, corr_rep_kfold_cv_test, count_values, ProgressBar,\
-  Timer, RegressorWrapper
+  Timer, RegressorWrapper, torch_accuracy, torch_balanced_accuracy
 
 # Data and statistics
 import numpy as np
@@ -31,7 +32,7 @@ from sklearn.feature_selection import SelectFromModel
 from sklearn.impute import KNNImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
-from sklearn.model_selection import LeaveOneGroupOut, RepeatedStratifiedKFold, cross_val_score
+from sklearn.model_selection import LeaveOneGroupOut, RepeatedStratifiedKFold, cross_validate
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC, SVC
@@ -42,6 +43,7 @@ from tqdm import tqdm
 from torchvision.models import resnet18
 from torchvision.models import ResNet18_Weights
 from torch import nn
+from torch.nn import BCEWithLogitsLoss
 
 # Plotting tables
 pd.set_option('display.max_rows', 500)
