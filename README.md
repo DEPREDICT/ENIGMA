@@ -3,7 +3,7 @@ from importer import *
 sN = slice(None)
 now = datetime.now()
 # results_uid       = now.strftime("%Y%m%d-%H%M%S")
-results_uid       = '20231103-190844'
+results_uid       = '20240418-181259-postRebuttal'
 results_dir       = get_root(f'results', results_uid)
 figdir            = results_dir.append('figures')
 results_file      = results_dir.append('result_dict.pkl')
@@ -13,7 +13,7 @@ os.makedirs(figdir, exist_ok=True)
 print('Results stored at:', results_dir)
 ```
 
-    Results stored at: D:\repositories\ENIGMA\results\20231103-190844
+    Results stored at: D:\repositories\ENIGMA\results\20240418-181259-postRebuttal
 ​    
 
 *Code supplement to:*
