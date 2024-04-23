@@ -679,20 +679,6 @@ print(extr_means.T)
     Response_percentage               46.4% ± 46.3%  22.9% ± 44.1%   83.6% ± 21.6%    25.6% ± 40.2%  32.9% ± 34.4%  37.7% ± 65.3%  45.3% ± 50.2%
     is_remitter                          67 (50.8%)      3 (37.5%)      33 (91.7%)        8 (24.2%)      8 (30.8%)      6 (54.5%)      9 (50.0%)
 
-
-
-```python
-len([i for i in populations['Extremes'] if i in populations['SameResponders']])/len(populations['Extremes'])
-```
-
-
-
-
-    0.5075757575757576
-
-
-
-
 ```python
 extremes = data.loc[populations['Extremes']]
 extr_lo_stats, extr_lo_means = collect_stats_per_site(extremes[~extremes.is_responder])
