@@ -1356,12 +1356,10 @@ distiller = TableDistiller(cortical_results, 'is_responder', None, 'dbc_no', Non
 distiller(7)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    7.No Significant difference (p_val: 0.703, ) between:
-     -wk_1        | 51.5%  |  7.7%  | 57.9%  |  8.9%  | 56.9%  |  8.2%  | 0.365  | -0.953 | -0.933 |
-     -wk_2        | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
-
-​    
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    7.No Significant difference (p_val: 0.953, ) between:
+     -wk_1        | 50.5%  |  5.7%  | 53.8%  |  7.2%  | 50.4%  |  5.8%  | 53.2%  |  6.8%  | 0.657  |
+     -wk_2        | 50.5%  |  5.9%  | 53.6%  |  7.2%  | 50.4%  |  5.3%  | 53.2%  |  6.8%  | 0.657  |
 
 ### 6.4 Visuals of performance over several analyses
 
