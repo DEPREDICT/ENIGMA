@@ -2,4 +2,6 @@ __pycache__/
 .idea/
 .upynb
 .ipynb_checkpoints/
+/data_original
 /data
+.trash/

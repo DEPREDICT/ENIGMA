@@ -1,5 +1,6 @@
 # Base imports
 import os
+os.environ['OUTDATED_IGNORE'] = '1'
 from collections.abc import Iterable
 from collections import OrderedDict
 
@@ -27,16 +28,20 @@ warnings.filterwarnings(action='ignore', category=UserWarning)
 np.seterr(divide='ignore', invalid='ignore')  # We store None values which will raise errors in statistics and return nans, which we then omit, so the warnings are not interesting
 
 # Machine learning
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier as GradientBoostingClassifier
+GradientBoostingClassifier.__name__  = 'GradientBoostingClassifier'
 from sklearn.feature_selection import SelectFromModel
 from sklearn.impute import KNNImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import balanced_accuracy_score
-from sklearn.model_selection import LeaveOneGroupOut, RepeatedStratifiedKFold, cross_validate
+from sklearn.model_selection import LeaveOneGroupOut, RepeatedStratifiedKFold, cross_validate, permutation_test_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC, SVC
 from imblearn.over_sampling import RandomOverSampler
+from sklearn.metrics import balanced_accuracy_score, accuracy_score
+from utils import Scorer
+from skopt import BayesSearchCV
 
 # Deep learning
 from tqdm import tqdm

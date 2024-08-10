@@ -1,26 +1,24 @@
 ```python
 from importer import *
+
 sN = slice(None)
 now = datetime.now()
-# results_uid       = now.strftime("%Y%m%d-%H%M%S")
-results_uid       = '20240418-181259-postRebuttal'
-results_dir       = get_root(f'results', results_uid)
-figdir            = results_dir.append('figures')
-results_file      = results_dir.append('result_dict.pkl')
-restats_file      = results_dir.append('result_and_stats_dict.pkl')
+# results_uid = now.strftime("%Y%m%d-%H%M%S")
+results_uid = '20240807-135247-postRebuttal2-Night2'
+results_dir = get_root(f'results', results_uid)
+figdir = results_dir.append('figures')
+results_file = results_dir.append('result_dict.pkl')
+restats_file = results_dir.append('result_and_stats_dict.pkl')
 dl_aggregate_file = results_dir.append('aggregate_dict.pkl')  # Stores models
 os.makedirs(figdir, exist_ok=True)
 print('Results stored at:', results_dir)
 ```
 
-    Results stored at: D:\repositories\ENIGMA\results\20240418-181259-postRebuttal
-​    
-
 *Code supplement to:*
 
 # Predicting Antidepressant Treatment Response from Cortical Structure on MRI: A Mega-Analysis from the ENIGMA-MDD Working Group
 
-![png](results/20240418-181259-postRebuttal/figures/lh_annot.png)
+![png](results/20240807-135247-postRebuttal2/figures/rh_annot.png)
 
 This README file is an export of `main.ipynb`, the primary report on the results presented in the article with this name. It is best to read this documentation in the original file in a notebook server like Jupyter. In this notebook export we will traverse through the data in the same order that things are discussed in the manuscript:
 1. Load, join and clean data
@@ -52,8 +50,7 @@ data = load_and_join_dfs(path_dbc, path_roi, index_col='SubjID', decimal=',')
 ```python
 path_dbc_wk1 = get_root('data', 'ENIGMA-MDD_patients-included_data-clinical_wk1.csv')
 wk1_subjs = read_any_csv(path_dbc_wk1, index_col='SubjID').index
-print(
-    f'Number of patients excluded if scan threshold is week 1 instead of week 2: {len([i for i in data.index if i not in wk1_subjs])}')
+print(f'Number of patients excluded if scan threshold is week 1 instead of week 2: {len([i for i in data.index if i not in wk1_subjs])}')
 ```
 
     Number of patients excluded if scan threshold is week 1 instead of week 2: 40
@@ -71,8 +68,8 @@ X_thc, X_thc_arr = load_proj_df(data, 'Thickness', dim=dim)
 X_are, X_are_arr = load_proj_df(data, 'Area', dim=dim)
 ```
 
-    100%|██████████| 252/252 [00:00<00:00, 1145.44it/s]
-    100%|██████████| 252/252 [00:00<00:00, 2598.01it/s]
+    100%|██████████| 252/252 [00:00<00:00, 2708.94it/s]
+    100%|██████████| 252/252 [00:00<00:00, 2485.96it/s]
 
 
 ### 1.2 Sanitizing and feature engineering
@@ -352,19 +349,6 @@ print(pd.concat(series_list, axis=1).fillna(0).astype(int).replace(0, '').head(1
     UCSF Adolescent MDD (SF)          78        78                                            
 
 
-
-```python
-# print(f'{data.loc[df_stg3.index].is_responder.mean():.1%} {data.loc[df_stg4.index].is_responder.mean():.1%}')
-1-data.loc[populations['SameResponders']].is_responder.mean()
-```
-
-
-
-
-    0.535031847133758
-
-
-
 ### 2.2 Inspect provided columns
 Before we move to the `map` data, let us take a look at the `roi` data that we received.
 There are also a lot of non-cortext columns. Do not worry about them, later on we will mention which are included in the model as BDC features explicitly.
@@ -460,7 +444,7 @@ Is this obviously related to any other properties, say age, treatment duration o
 We find that this is the case, average age for responders is 35.1 and 37.8.
 Average treatment duration is 9 weeks for responders, and 7.9 for non-responders.
 Finally, we do find a large difference in the antidepressant used: 82% of SSRI-users does not respond, while 79% of SNRI-users does.
-However, these properties are strongly correlated with site, 57/66 SNRI users are from the highest performing site with an average response rate of 84%.
+However, these properties are strongly correlated with site, 57/66 SNRI users are from DEP-ARREST-CLIN the highest performing site with an average response rate of 84%.
 
 
 ```python
@@ -543,7 +527,7 @@ plt.show()
 
 
 ​    
-![png](.readme/output_34_0.png)
+![png](.readme/output_33_0.png)
 ​    
 
 
@@ -575,7 +559,7 @@ trend_fig.savefig(figdir.append('ResponseTrends.png'))
 
 
 ​    
-![png](.readme/output_36_0.png)
+![png](.readme/output_35_0.png)
 ​    
 
 
@@ -601,7 +585,7 @@ plt.show()
 
 
 ​    
-![png](.readme/output_38_0.png)
+![png](.readme/output_37_0.png)
 ​    
 
 
@@ -678,6 +662,8 @@ print(extr_means.T)
     ADcur                                 1.5 ± 5.7    12.0 ± 16.0       0.0 ± 0.0        0.8 ± 0.4      nan ± nan      nan ± nan      0.9 ± 0.5
     Response_percentage               46.4% ± 46.3%  22.9% ± 44.1%   83.6% ± 21.6%    25.6% ± 40.2%  32.9% ± 34.4%  37.7% ± 65.3%  45.3% ± 50.2%
     is_remitter                          67 (50.8%)      3 (37.5%)      33 (91.7%)        8 (24.2%)      8 (30.8%)      6 (54.5%)      9 (50.0%)
+
+
 
 ```python
 extremes = data.loc[populations['Extremes']]
@@ -792,12 +778,40 @@ Here is a list of the populations with explaination:
 * `is_female` used as a sanity check.
 * `is_extreme` briefly explored since treatment response prediction in this group works, if you can predict this group beforehand, this might still be useful. But as we will find in analysis 6.3.3.2, we can't predict it.
 
+#### Purge unused training options
+So the code is set up to be able to run all the analyses. This will mean that about 2560 models would have to be trained.
+To make life a bit quicker, we drop options that we will not use in the later analyses.
+This operation in optional, and can be undone in later runs (i.e., you could first run the essential runs, and because these are loaded automatically and then skipped, in a later stage add these unused options for future applications.)
+
+
+```python
+# Preallocate dictionary for storage
+if os.path.isfile(results_file):
+    results_dict = pickle_in(results_file)
+    print(f'Loaded results file: {results_file}.\n The file contained {len(nested_dict_to_df(results_dict))} results')
+    dl_aggregates = pickle_in(dl_aggregate_file)
+    print(
+        f'Loaded aggregates file: {results_file}.\n The file contained {len(nested_dict_to_df(dl_aggregates))} trained Deep Learning models')
+else:
+    results_dict, dl_aggregates = {}, {}
+    print(f'Created new results file: {results_file}')
+```
+
+    Loaded results file: D:\repositories\ENIGMA_lean\results\20240807-135247-postRebuttal2-Night2\result_dict.pkl.
+     The file contained 352 results
+    Loaded aggregates file: D:\repositories\ENIGMA_lean\results\20240807-135247-postRebuttal2-Night2\result_dict.pkl.
+     The file contained 140 trained Deep Learning models
+
+
 
 ```python
 # Some settings to our machine learning method:
-target_labels = 'is_responder', 'is_remitter', 'is_female', 'is_extreme',
+target_labels = 'is_responder',  # 'is_remitter', 'is_female', 'is_extreme',
 n_splits = 10
-n_repeats = 10
+n_repeats = 1
+n_permutations = 100
+n_iter = 25
+n_epochs = 20
 
 # 1. Define data type for full population we need :X = train data, y = label data, c = stratification data
 get_y_for_target = lambda tl: pd.Series(data=[data[tl].loc[sub.split('|')[0]] for sub in X_thc.index],
@@ -859,56 +873,37 @@ cv_schemes = {'Fold': (RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_re
                                      continuous_covariates=['Age', 'Age2']),),
               'Site': (LeaveOneGroupOut(), None,)}
 
-# 5. Define classifiers to use:
+# 5. Define classifiers and hyperparameter search space to use:
+from hyper_space import svc_space, gbc_space, log_space, rfc_space
+scorer = Scorer({'accuracy': accuracy_score, 'balanced_accuracy': balanced_accuracy_score})
 classifiers = \
-    LogisticRegression(max_iter=500), \
-    SVC(), \
-    GradientBoostingClassifier(), \
-    RandomForestClassifier(),
+    (SVC(), svc_space), \
+    (GradientBoostingClassifier(), gbc_space), \
+    (LogisticRegression(max_iter=500), log_space), \
+    (RandomForestClassifier(), rfc_space)
 
 # Define other pipeline components
-regressor = RegressorWrapper(data=data, continuous_covariates=['Age', 'Age2'])
 imputer = PipeWrapper(KNNImputer)
+regressor = RegressorWrapper(data=data, continuous_covariates=['Age', 'Age2'])
 selector = SelectFromModel(LinearSVC(penalty="l1", dual=False, max_iter=20000), threshold=0)
 scaler = PipeWrapper(StandardScaler)
 
 # Define Deep Learning model
+torch_scorer = {'accuracy': torch_accuracy, 'balanced_accuracy': torch_balanced_accuracy, }
 resnet_model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
 resnet_model.fc = nn.Sequential(nn.Linear(in_features=512, out_features=2, bias=True), Squeeze())
-model = TorchTrainer(subestimator=resnet_model, batch_size=32, epochs=20, verbose=False, random_state=0,
-                     metrics={'balanced_accuracy': torch_balanced_accuracy, 'accuracy': torch_accuracy, })
-```
+model = TorchTrainer(
+    subestimator=resnet_model,
+    batch_size=32,
+    epochs=n_epochs,
+    verbose=False,
+    random_state=0,
+    metrics=torch_scorer
+)
 
-#### Purge unused training options
-So the code is set up to be able to run all the analyses. This will mean that about 2560 models would have to be trained.
-To make life a bit quicker, we drop options that we will not use in the later analyses.
-This operation in optional, and can be undone in later runs (i.e., you could first run the essential runs, and because these are loaded automatically and then skipped, in a later stage add these unused options for future applications.)
-
-
-```python
-# Retain only the is_responder target label
+# Sensitivity testing
 subj_classes = {'wk_1': wk1_subjs, 'wk_2': data.index}
 ```
-
-
-```python
-# Preallocate dictionary for storage
-if os.path.isfile(results_file):
-    results_dict = pickle_in(results_file)
-    print(f'Loaded results file: {results_file}.\n The file contained {len(nested_dict_to_df(results_dict))} results')
-    dl_aggregates = pickle_in(dl_aggregate_file)
-    print(
-        f'Loaded aggregates file: {results_file}.\n The file contained {len(nested_dict_to_df(dl_aggregates))} trained Deep Learning models')
-else:
-    results_dict, dl_aggregates = {}, {}
-    print(f'Created new results file: {results_file}')
-```
-
-    Loaded results file: D:\repositories\ENIGMA_lean\results\20240418-181259-postRebuttalLongLong\result_dict.pkl.
-     The file contained 1302 results
-    Loaded aggregates file: D:\repositories\ENIGMA_lean\results\20240418-181259-postRebuttalLongLong\result_dict.pkl.
-     The file contained 140 trained Deep Learning models
-
 
 ## 4. Train Machine Learning Models
 We have set up an impressive nested dictionary of six levels, with at the deepest level data (X), labels(y) and a stratification variable (c). To train all machine learning models we loop over each item. At the deepest loop level you will find two chucks of code: the first for classical machine learning, and the second for deep learning (see `1)` and `2)`). Although it might have been nice to also create a loop for these two options, they do not share data or models, so that would not have made a lot of sense.
@@ -921,10 +916,9 @@ By default, the training loop checks if results are preexisting, to allow for co
 ```python
 # Print progress
 n_tasks = count_values(data_dict) * len(cv_schemes) * len(classifiers) * len(target_labels)
-n_tasks = 1512
+# n_tasks = 1512
+n_tasks = 412
 pb = ProgressBar(n_tasks, desc='models trained')
-
-scorers = 'accuracy', 'balanced_accuracy',
 
 # For explanation on these six nested loops please see the list at 3.
 with Timer():
@@ -939,104 +933,94 @@ with Timer():
                         y = ys.loc[subj_incl][target_label]
                         c = c.loc[subj_incl]
                         for cv_name, (cv, harmonizer) in cv_schemes.items():
-                            for classifier in classifiers:
-                                try:
-                                    if population_name == 'Extremes' and target_label == 'is_extreme' or \
-                                            len(c.unique()) == 1 and cv_name == 'Site':
-                                        # Can't predict on own population or do LSO-CV on one site
-                                        continue
+                            n_groups = (1, len(set(c))) if cv_name == 'Site' else (n_repeats, n_splits)
+                            for classifier, param_space in classifiers:
+                                if population_name == 'Extremes' and target_label == 'is_extreme' or \
+                                        len(c.unique()) == 1 and cv_name == 'Site':
+                                    # Can't predict on own population or do LSO-CV on one site
+                                    continue
 
-                                    if subj_class == 'wk_1' and (
-                                            dbc_presence != 'dbc_no' or
-                                            population_name != 'All' or
-                                            cv_name != 'Fold' or
-                                            target_label != 'is_responder'):
-                                        # We only want to run the sensitivity analysis of the weeks of cutoff
-                                        # for runs that are relevant to the primary analysis
-                                        continue
+                                if subj_class == 'wk_1' and (
+                                        dbc_presence != 'dbc_no' or
+                                        population_name != 'All' or
+                                        cv_name != 'Fold' or
+                                        target_label != 'is_responder'):
+                                    # We only want to run the sensitivity analysis of the weeks of cutoff
+                                    # for runs that are relevant to the primary analysis
+                                    continue
 
-                                    # 1) Classical Machine Learning: Specify which Classical ML experiment we are going to run
-                                    experiment_specifier = dtype, dbc_presence, population_name, cv_name, classifier.__class__.__name__, target_label, subj_class, 'done'
+                                # 1) Classical Machine Learning: Specify which Classical ML experiment we are going to run
+                                experiment_specifier = dtype, dbc_presence, population_name, cv_name, classifier.__class__.__name__, target_label, subj_class, 'done'
+                                previous_result = safe_dict_get(results_dict, *experiment_specifier)
 
-                                    previous_result = safe_dict_get(results_dict, *experiment_specifier)
-                                    if previous_result['done'] is None:  # Skip if results exist
-                                        # Get CV-scores, score and a priori chance
-                                        pipeline = make_pipeline(imputer, regressor, harmonizer, scaler, imputer,
-                                                                 selector,
-                                                                 classifier, )
-                                        # Duplicate Generator. (y and groups are not in use at the same time)
-                                        split_score, split_null = tee(cv.split(X_safe, y=c, groups=c))
-                                        cross_val_scores = cross_validate(
-                                            estimator=pipeline,
-                                            X=X_safe,
-                                            y=y,
-                                            cv=split_score,
-                                            scoring=scorers
-                                        )
-                                        # Extract and assign the relevant scoring items
-                                        for scorer in scorers:
-                                            previous_result[scorer] = cross_val_scores[f'test_{scorer}']
+                                if previous_result['done'] is None:  # Skip if results exist
+                                    pipeline = make_pipeline(imputer, regressor, harmonizer, scaler, imputer, selector, classifier, )
+                                    opt = BayesSearchCV(estimator=pipeline, search_spaces=param_space, n_iter=n_iter, cv=5, n_jobs=-1)
+                                    try:
+                                        _, _, pvalue = permutation_test_score(opt, X_safe, y, groups=c, cv=cv, n_permutations=n_permutations, scoring=scorer)
+                                        previous_result['pvalue'] = pvalue
+                                        for score_name, score_value in scorer.items():
+                                            score_tensor = np.reshape(score_value, [1 + n_permutations, *n_groups])
+                                            previous_result[score_name] = score_tensor[0]
+                                            previous_result[f'null_{score_name}'] = score_tensor[1:]
+                                    finally:
+                                        scorer.reset()  # Clear the scorer when we are done
+                                    # Save results
+                                    previous_result['done'] = True
+                                    pickle_out(results_dict, results_file)
+                                pb()
 
-                                        # The tricky thing with perfectly balanced samples is that with n_splits -> inf, null_acc -> 0.0
-                                        previous_result['null'] = [np.mean(y[test] == y[train].mode()[0]) for
-                                                                   train, test in list(split_null)]
-                                        # NB: CV order: [f1r1, f2r1, f3r1, f1r2, f2r2, f3r2] for 3 fold (f) 2 repeat (r)
-                                        # Save results
-                                        previous_result['done'] = True
-                                        pickle_out(results_dict, results_file)
-                                    pb()
+                                
+                                if dbc_presence == 'dbc_no' and dtype == 'vec':
+                                    for X_arr, letter in zip((X_thc_arr, X_are_arr), 'TA'):
+                                        # 2) Deep Learning: Specify which Deep Learning experiment we are going to run
+                                        dl_specifier = f'2D{letter}', dbc_presence, population_name, cv_name, 'ResNet', target_label, subj_class, 'done'
+                                        previous_dl_result = safe_dict_get(results_dict, *dl_specifier)
+                                        if previous_dl_result['done'] is None:  # Skip if results exist
+                                            pop_idx = [idx for idx, subj_id in enumerate(X_thc.index) if
+                                                       subj_id in y.index]
 
-                                    if dbc_presence == 'dbc_no' and dtype == 'vec':
-                                        for X_arr, letter in zip((X_thc_arr, X_are_arr), 'TA'):
-                                            # 2) Deep Learning: Specify which Deep Learning experiment we are going to run
-                                            dl_specifier = f'2D{letter}', dbc_presence, population_name, cv_name, 'ResNet', target_label, subj_class, 'done'
-                                            previous_dl_result = safe_dict_get(results_dict, *dl_specifier)
-                                            if previous_dl_result['done'] is None:  # Skip if results exist
-                                                pop_idx = [idx for idx, subj_id in enumerate(X_thc.index) if
-                                                           subj_id in y.index]
-                                                # Get CV-scores, score and a priori chance
-                                                torch_results = torch_val_score(model, X_arr[pop_idx], y, cv, groups=c,
-                                                                                verbose=False,
-                                                                                return_pipeline='aggregate')
-                                                previous_dl_result['balanced_accuracy'] = np.array(
-                                                    [r['balanced_accuracy'] for r in torch_results['test']])
-                                                previous_dl_result['accuracy'] = np.array(
-                                                    [r['accuracy'] for r in torch_results['test']])
-                                                previous_dl_result['null'] = torch_results['null']
+                                            # Get CV-scores, score and a priori chance
+                                            previous_dl_result.update({''.join(null_metric): [] for null_metric in
+                                                                       product(('null_', ''), torch_scorer)})
+                                            for do_permute in range(1 + n_permutations):
+                                                tag = 'null_' if do_permute else ''
+                                                torch_results = torch_val_score(model, X_arr[pop_idx], y, cv,
+                                                                                groups=c, verbose=False,
+                                                                                return_pipeline='aggregate',
+                                                                                do_permute=bool(do_permute))
+                                                for metric in torch_scorer:
+                                                    dl_score_matrix = np.reshape(
+                                                        [r[metric] for r in torch_results['test']], n_groups)
+                                                    previous_dl_result[tag + metric].append(dl_score_matrix)
+                                            # Convert the list of dl_permutations into a properly formatted array
+                                            for metric, tag in product(torch_scorer, ('', 'null_')):
+                                                permutes = n_permutations if tag else 1
+                                                sc = previous_dl_result[tag + metric]
+                                                sc = np.reshape(sc, (permutes, *sc[0].shape))
+                                                previous_dl_result[tag + metric] = sc
 
-                                                dl_aggregate = safe_dict_get(dl_aggregates, *dl_specifier[:-1])
-                                                dl_aggregate[dl_specifier[-2]] = torch_results['pipeline']
-                                                # Save results
-                                                pickle_out(results_dict, results_file)
-                                                previous_dl_result['done'] = True
-                                                pickle_out(dl_aggregates, dl_aggregate_file)
-                                            pb()
-                                except (KeyboardInterrupt, SystemExit) as e:
-                                    raise e
-                                except:
-                                    print('A MAJOR ISSUE!!', *experiment_specifier)
-                                    pass
+                                            # Computation of permutation p-value, copied from scipy (see permutation_test)
+                                            dl_pvalue = ((previous_dl_result[f'null_accuracy'].mean(2).mean(1) >=
+                                                          previous_dl_result[f'accuracy'].mean(2).mean(
+                                                              1)).sum() + 1.0) / (n_permutations + 1)
+                                            previous_dl_result['pvalue'] = dl_pvalue
 
-results_table = nested_dict_to_df(results_dict)
-# The table is ordered by the order of the nesting of the calculation.
-# Reorder the index to be consistent with the order described in the manuscript.
-results_table = results_table.reorder_levels([5, 0, 1, 4, 3, 2, 6])
+                                            dl_aggregate = safe_dict_get(dl_aggregates, *dl_specifier[:-1])
+                                            dl_aggregate[dl_specifier[-2]] = torch_results['pipeline']
+                                            # Save results
+                                            previous_dl_result['done'] = True
+                                            pickle_out(results_dict, results_file)
+                                            pickle_out(dl_aggregates, dl_aggregate_file)
+                                        pb()
+
 ```
 
 
     VBox(children=(IntProgress(value=0, bar_style='info', description='Progress:', layout=Layout(width='50%'), max…
 
 
-    IOPub message rate exceeded.
-    The notebook server will temporarily stop sending output
-    to the client in order to avoid crashing it.
-    To change this limit, set the config variable
-    `--NotebookApp.iopub_msg_rate_limit`.
-    
-    Current values:
-    NotebookApp.iopub_msg_rate_limit=1000.0 (msgs/sec)
-    NotebookApp.rate_limit_window=3.0 (secs)
-
+    Elapsed: 0.4226229190826416
 ​    
 
 
@@ -1052,7 +1036,8 @@ Display an example of the training process of a deep learning model as a check.
 
 ```python
 # Specify which DL result to look at as an deep learning configuration:
-a_dl_res = dl_aggregates['2DT']['dbc_no']['Extremes']['Fold']['ResNet']['is_responder']['wk_2']  # A Deep Learning Result
+a_dl_res = dl_aggregates['2DA']['dbc_no']['Extremes']['Fold']['ResNet']['is_responder'][
+    'wk_2']  # A Deep Learning Result
 # Show it
 lw = 4
 dl_fig, axes = plt.subplots(3, 2, figsize=(9, 6))
@@ -1084,7 +1069,7 @@ dl_fig.show()
 
 
 ​    
-![png](.readme/output_55_0.png)
+![png](.readme/output_52_0.png)
 ​    
 
 
@@ -1103,7 +1088,7 @@ These statistics are: population size, T-statisic, p-value, Bayes factor and Eff
 
 
 ```python
-statistics_calculator = calc_stats_wrapper(population_indices, data_dict, n_splits)
+statistics_calculator = calc_stats_wrapper(population_indices)
 stats_table = statistics_calculator(results_table)
 
 # Horizontal concat the statistics table to the results table
@@ -1127,15 +1112,15 @@ distiller = TableDistiller(cortical_results, 'is_responder', None, 'dbc_no', Non
 distiller(1)
 ```
 
-    (1) 'is_female', 'is_remitter', 'is_responder', 'is_extreme'
-    (2) '2DT', 'vec', 'roi', '2DA'
+    (1) 'is_responder'
+    (2) 'vec', '2DT', '2DA', 'roi'
     (3) 'dbc_no', 'dbc_yes'
-    (4) 'ResNet', 'GradientBoostingClassifier', 'SVC'
+    (4) 'GradientBoostingClassifier', 'ResNet', 'SVC'
     (5) 'Site', 'Fold'
-    (6) 'All', 'Extremes', 'SameResponders', 'LongTreated', 'Hiroshima'
-    (7) 'wk_2', 'wk_1'
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    1.is_responder   | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
+    (6) 'LongTreated', 'SameResponders', 'Extremes', 'Hiroshima', 'All'
+    (7) 'wk_1', 'wk_2'
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    1.is_responder| 50.5%  |  5.9%  | 53.6%  |  7.2%  | 50.4%  |  5.3%  | 53.2%  |  6.8%  | 0.657  |
 
 ​    
 
@@ -1149,21 +1134,21 @@ distiller.is_strict = False
 distiller(2, 3, 4)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    2.No Significant difference (p_val: 0.088, F=2.2354) among:
-     -2DT            | 54.6%  |  9.7%  | 57.1%  |  9.6%  | 56.9%  |  7.6%  | 0.436  | -0.815 | -1.009 |
-     -vec            | 51.7%  |  6.0%  | 59.4%  |  8.1%  | 56.9%  |  7.6%  | 0.622  | -0.511 | -1.095 |
-     -roi            | 49.6%  |  7.4%  | 56.6%  |  9.0%  | 56.9%  |  7.9%  | 0.173  | -1.478 | -0.679 |
-     -2DA            | 51.6%  |  9.2%  | 57.0%  |  9.2%  | 56.9%  |  7.6%  | 0.385  | -0.913 | -0.973 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    2.No Significant difference (p_val: 0.101, eta-sqr=0.121 F=2.56e+00) among:
+     -roi         | 50.6%  |  5.4%  | 54.6%  |  5.6%  | 50.9%  |  5.2%  | 54.6%  |  5.1%  | 0.612  |
+     -2DA         | 49.8%  |  2.1%  | 53.9%  |  9.1%  | 50.1%  |  4.2%  | 53.7%  |  8.2%  | 0.436  |
+     -2DT         | 50.3%  |  5.0%  | 48.1%  |  6.1%  | 49.0%  |  5.2%  | 46.6%  |  6.4%  | 0.273  |
+     -vec         | 50.9%  |  7.7%  | 55.1%  |  6.6%  | 50.7%  |  5.7%  | 54.9%  |  5.7%  | 0.630  |
     
-    3.No Significant difference (p_val: 0.770, t_stat0.302 BF=-1.12e+00, d=4.24e-02) between:
-     -dbc_no         | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
-     -dbc_yes        | 50.3%  |  6.8%  | 57.7%  |  8.6%  | 56.9%  |  7.7%  | 0.283  | -1.142 | -0.833 |
+    3.No Significant difference (p_val: 0.703, ) between:
+     -dbc_no      | 51.0%  |  5.5%  | 54.4%  |  6.3%  | 50.3%  |  5.8%  | 54.2%  |  5.7%  | 0.617  |
+     -dbc_yes     | 50.5%  |  5.9%  | 53.6%  |  7.2%  | 50.4%  |  5.3%  | 53.2%  |  6.8%  | 0.657  |
     
-    4.Significant difference (p_val: 2.3e-05, F=12.2878) among:
-     -ResNet         | 53.1%  |  9.6%  | 57.1%  |  9.4%  | 56.9%  |  7.6%  | 0.410  | -0.864 | -0.991 |
-     -GradientBoos...| 52.0%  |  9.1%  | 56.5%  |  9.2%  | 56.9%  |  7.7%  | 0.300  | -1.099 | -0.812 |
-     -SVC            | 49.3%  |  2.4%  | 59.5%  |  7.9%  | 56.9%  |  7.7%  | 0.397  | -0.890 | -0.962 |
+    4.No Significant difference (p_val: 0.153, eta-sqr=0.078 F=2.41e+00) among:
+     -ResNet      | 50.0%  |  3.9%  | 51.0%  |  8.3%  | 49.5%  |  4.7%  | 50.1%  |  8.2%  | 0.372  |
+     -GradientBoos| 51.0%  |  8.3%  | 53.8%  |  7.4%  | 51.8%  |  6.7%  | 53.7%  |  6.5%  | 0.701  |
+     -SVC         | 50.5%  |  4.3%  | 55.9%  |  4.3%  | 49.9%  |  3.7%  | 55.8%  |  3.8%  | 0.545  |
 
 ​    
 
@@ -1175,10 +1160,10 @@ This line means: present the average results for predicting response in the enti
 distiller(5)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    5.No Significant difference (p_val: 0.338, t_stat-1.011 BF=-9.25e-01, d=-6.99e-01) between:
-     -Site           | 50.0%  | 10.8%  | 54.6%  | 13.6%  | 65.7%  | 19.9%  | 0.347  | -0.992 | -0.930 |
-     -Fold           | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    5.No Significant difference (p_val: 0.727, ) between:
+     -Site        | 52.3%  |  5.5%  | 51.1%  | 10.4%  | 50.0%  |  7.1%  | 48.7%  | 11.5%  | 0.235  |
+     -Fold        | 50.5%  |  5.9%  | 53.6%  |  7.2%  | 50.4%  |  5.3%  | 53.2%  |  6.8%  | 0.657  |
 
 ​    
 
@@ -1188,17 +1173,19 @@ Compared to previous analyses, we do not specify a population (level 3 is `None`
 
 
 ```python
+added_data = results_and_stats.index.get_level_values(2)
+subc_compare = results_and_stats[np.logical_or(added_data == 'dbc_no', added_data == 'sub_add')]
 distiller = TableDistiller(subc_compare, 'is_responder', None, 'dbc_no', None, 'Fold', None, 'wk_2', n_splits=n_splits)
 distiller(6)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    6.Significant difference (p_val: 4.4e-56, F=171.8782) among:
-     -All            | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
-     -Extremes       | 63.8%  | 12.0%  | 63.8%  | 12.0%  | 50.0%  |  0.0%  | 0.007* | 3.440  | 1.241  |
-     -SameResponders | 50.8%  | 11.4%  | 50.7%  | 12.3%  | 51.1%  | 11.2%  | 0.864  | -0.177 | -0.850 |
-     -LongTreated    | 52.0%  | 10.1%  | 63.1%  | 12.7%  | 65.6%  | 11.7%  | 0.425  | -0.836 | 0.117  |
-     -Hiroshima      | 46.2%  | 14.1%  | 43.3%  | 15.5%  | 44.3%  | 14.4%  | 0.798  | -0.263 | -0.811 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    6.Significant difference (p_val: 0.002, eta-sqr=0.326 F=3.56e+01) among:
+     -LongTreated | 50.5%  |  5.2%  | 62.6%  |  9.1%  | 51.1%  |  6.9%  | 62.1%  |  9.9%  | 0.757  |
+     -SameResponders | 50.1%  |  7.2%  | 52.1%  | 10.0%  | 50.5%  |  8.0%  | 52.1%  |  9.3%  | 0.732  |
+     -Extremes    | 63.9%  | 10.6%  | 63.6%  |  8.7%  | 52.3%  |  9.7%  | 52.1%  | 10.3%  | 0.001* |
+     -Hiroshima   | 49.6%  |  7.1%  | 48.4%  |  8.0%  | 49.1%  |  9.2%  | 47.5%  | 10.6%  | 0.666  |
+     -All         | 50.5%  |  5.9%  | 53.6%  |  7.2%  | 50.4%  |  5.3%  | 53.2%  |  6.8%  | 0.657  |
 
 ​    
 
@@ -1206,16 +1193,14 @@ distiller(6)
 
 
 ```python
-added_data = results_and_stats.index.get_level_values(2)
-subc_compare = results_and_stats[np.logical_or(added_data == 'dbc_no', added_data == 'sub_add')]
 distiller = TableDistiller(subc_compare, 'is_responder', None, None, None, 'Fold', 'All', 'wk_2', n_splits=n_splits)
 distiller(3)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    3.No Significant difference (p_val: 0.627, t_stat0.504 BF=-1.03e+00, d=8.68e-02) between:
-     -sub_add        | 50.6%  |  6.9%  | 57.6%  |  8.7%  | 56.9%  |  7.9%  | 0.214  | -1.338 | -0.776 |
-     -dbc_no         | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    3.No Significant difference (p_val: 0.703, ) between:
+     -sub_no      | 51.6%  |  3.7%  | 55.3%  |  3.8%  | 51.4%  |  5.9%  | 55.4%  |  5.7%  | 0.587  |
+     -dbc_yes     | 50.5%  |  5.9%  | 53.6%  |  7.2%  | 50.4%  |  5.3%  | 53.2%  |  6.8%  | 0.657  |
 
 ​    
 
@@ -1230,28 +1215,28 @@ distiller.is_strict = False
 distiller(2, 3, 4, 5)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    1.is_responder   | 63.8%  | 12.0%  | 63.8%  | 12.0%  | 50.0%  |  0.0%  | 0.007* | 3.440  | 1.241  |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    1.is_responder| 63.9%  | 10.6%  | 63.6%  |  8.7%  | 52.3%  |  9.7%  | 52.1%  | 10.3%  | 0.001* |
     
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    2.Significant difference (p_val: 5.0e-05, F=8.2521) among:
-     -2DT            | 62.9%  | 13.2%  | 62.9%  | 13.2%  | 50.0%  |  0.0%  | 0.020* | 2.807  | 0.617  |
-     -vec            | 64.0%  | 11.1%  | 64.0%  | 11.1%  | 50.0%  |  0.0%  | 0.005* | 3.651  | 1.467  |
-     -roi            | 66.4%  | 11.2%  | 66.4%  | 11.2%  | 50.0%  |  0.0%  | 0.002* | 4.226  | 2.000  |
-     -2DA            | 58.9%  | 12.3%  | 58.9%  | 12.3%  | 50.0%  |  0.0%  | 0.067  | 2.079  | -0.105 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    2.No Significant difference (p_val: 0.839, eta-sqr=0.036 F=6.98e-01) among:
+     -vec        | 63.6%  | 16.3%  | 63.9%  | 12.2%  | 53.8%  | 12.6%  | 53.8%  | 12.6%  | 0.002* |
+     -2DT        | 63.1%  |  2.4%  | 60.5%  |  5.2%  | 50.1%  |  2.0%  | 48.1%  |  5.7%  | 0.010* |
+     -2DA        | 63.1%  |  2.7%  | 62.8%  |  5.0%  | 49.6%  |  4.5%  | 50.1%  |  6.9%  | 0.010* |
+     -roi        | 65.1%  |  8.1%  | 65.3%  |  6.7%  | 53.3%  | 10.3%  | 53.3%  | 10.3%  | 0.003* |
     
-    3.Significant difference (p_val: nan, t_statnan BF=9.49e-02, d=1.45e-02) between:
-     -dbc_no         | 63.8%  | 12.0%  | 63.8%  | 12.0%  | 50.0%  |  0.0%  | 0.007* | 3.440  | 1.241  |
-     -dbc_yes        | 65.0%  | 11.3%  | 65.0%  | 11.3%  | 50.0%  |  0.0%  | 0.004* | 3.906  | 1.658  |
+    3.No Significant difference (p_val: 0.703, ) between:
+     -dbc_no     | 65.4%  | 13.2%  | 65.1%  |  9.7%  | 53.6%  | 11.6%  | 53.6%  | 11.6%  | 0.001* |
+     -dbc_yes    | 63.9%  | 10.6%  | 63.6%  |  8.7%  | 52.3%  |  9.7%  | 52.1%  | 10.3%  | 0.001* |
     
-    4.Significant difference (p_val: 9.2e-05, F=10.4957) among:
-     -ResNet         | 60.9%  | 12.9%  | 60.9%  | 12.9%  | 50.0%  |  0.0%  | 0.037* | 2.443  | 0.256  |
-     -GradientBoos...| 65.1%  | 11.9%  | 65.1%  | 11.9%  | 50.0%  |  0.0%  | 0.005* | 3.744  | 1.467  |
-     -SVC            | 65.3%  | 10.6%  | 65.3%  | 10.6%  | 50.0%  |  0.0%  | 0.003* | 4.133  | 2.000  |
+    4.No Significant difference (p_val: 0.300, eta-sqr=0.055 F=1.66e+00) among:
+     -ResNet      | 63.1%  |  2.6%  | 61.7%  |  5.2%  | 49.9%  |  3.5%  | 49.1%  |  6.4%  | 0.001* |
+     -GradientBoos| 65.9%  | 11.6%  | 66.5%  |  8.6%  | 55.2%  | 10.3%  | 55.3%  | 10.3%  | 0.002* |
+     -SVC         | 62.8%  | 13.8%  | 62.8%  | 10.7%  | 51.8%  | 12.3%  | 51.8%  | 12.4%  | 0.003* |
     
-    5.No Significant difference (p_val: 0.889, t_stat0.143 BF=-8.24e-01, d=5.69e-01) between:
-     -Site           | 44.0%  | 14.6%  | 40.0%  | 16.0%  | 46.5%  | 29.3%  | 0.781  | -0.287 | -0.973 |
-     -Fold           | 63.8%  | 12.0%  | 63.8%  | 12.0%  | 50.0%  |  0.0%  | 0.007* | 3.440  | 1.241  |
+    5.No Significant difference (p_val: 0.703, ) between:
+     -Fold        | 63.9%  | 10.6%  | 63.6%  |  8.7%  | 52.3%  |  9.7%  | 52.1%  | 10.3%  | 0.001* |
+     -Site        | 65.0%  |  7.6%  | 56.7%  | 14.5%  | 50.2%  | 10.3%  | 41.0%  | 18.2%  | 0.001* |
 
 ​    
 
@@ -1263,15 +1248,15 @@ distiller = TableDistiller(results_and_stats, 'is_responder', None, None, None, 
 distiller(3)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    3.Significant difference (p_val: 2.9e-04, F=5.1764) among:
-     -sub_dbc        | 54.5%  |  8.4%  | 56.9%  |  8.6%  | 56.9%  |  7.9%  | 0.856  | -0.187 | -1.150 |
-     -dbc_no         | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
-     -sub_nly        | 53.7%  |  8.3%  | 59.6%  |  8.6%  | 56.9%  |  7.9%  | 0.730  | -0.356 | -1.133 |
-     -dbc_yes        | 50.3%  |  6.8%  | 57.7%  |  8.6%  | 56.9%  |  7.7%  | 0.283  | -1.142 | -0.833 |
-     -sub_all        | 53.8%  |  7.8%  | 59.8%  |  8.6%  | 56.9%  |  7.9%  | 0.809  | -0.249 | -1.132 |
-     -sub_add        | 50.6%  |  6.9%  | 57.6%  |  8.7%  | 56.9%  |  7.9%  | 0.214  | -1.338 | -0.776 |
-     -dbc_nly        | 52.2%  |  8.5%  | 57.7%  |  8.9%  | 56.9%  |  7.9%  | 0.425  | -0.835 | -1.002 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    3.No Significant difference (p_val: 0.306, eta-sqr=0.043 F=1.46e+00) among:
+     -dbc_no      | 50.5%  |  5.9%  | 53.6%  |  7.2%  | 50.4%  |  5.3%  | 53.2%  |  6.8%  | 0.657  |
+     -dbc_nly     | 53.6%  |  4.8%  | 55.9%  |  4.2%  | 51.3%  |  6.8%  | 54.3%  |  6.2%  | 0.289  |
+     -sub_all     | 55.6%  |  5.0%  | 57.6%  |  5.4%  | 52.6%  |  5.6%  | 55.9%  |  5.6%  | 0.275  |
+     -sub_nly     | 54.1%  |  4.4%  | 56.0%  |  5.3%  | 51.5%  |  6.2%  | 54.5%  |  6.2%  | 0.217  |
+     -sub_dbc     | 53.4%  |  5.0%  | 55.7%  |  5.8%  | 52.1%  |  6.2%  | 55.2%  |  5.9%  | 0.554  |
+     -sub_add     | 51.6%  |  3.7%  | 55.3%  |  3.8%  | 51.4%  |  5.9%  | 55.4%  |  5.7%  | 0.587  |
+     -dbc_yes     | 51.0%  |  5.5%  | 54.4%  |  6.3%  | 50.3%  |  5.8%  | 54.2%  |  5.7%  | 0.617  |
 
 ​    
 
@@ -1281,15 +1266,15 @@ distiller = TableDistiller(results_and_stats, 'is_responder', None, None, None, 
 distiller(3)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    3.Significant difference (p_val: 2.1e-06, F=8.3331) among:
-     -sub_dbc        | 62.2%  | 13.1%  | 62.2%  | 13.1%  | 50.0%  |  0.0%  | 0.025* | 2.687  | 0.490  |
-     -dbc_no         | 63.8%  | 12.0%  | 63.8%  | 12.0%  | 50.0%  |  0.0%  | 0.007* | 3.440  | 1.241  |
-     -sub_nly        | 61.1%  | 12.2%  | 61.1%  | 12.2%  | 50.0%  |  0.0%  | 0.028* | 2.625  | 0.433  |
-     -dbc_yes        | 65.0%  | 11.3%  | 65.0%  | 11.3%  | 50.0%  |  0.0%  | 0.004* | 3.906  | 1.658  |
-     -sub_all        | 60.9%  | 12.9%  | 60.9%  | 12.9%  | 50.0%  |  0.0%  | 0.039* | 2.420  | 0.205  |
-     -sub_add        | 66.8%  | 11.3%  | 66.8%  | 11.3%  | 50.0%  |  0.0%  | 0.002* | 4.320  | 1.922  |
-     -dbc_nly        | 56.9%  | 12.3%  | 56.9%  | 12.3%  | 50.0%  |  0.0%  | 0.039* | 2.408  | 0.210  |
+                 |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    3.Significant difference (p_val: 0.017, eta-sqr=0.092 F=3.25e+00) among:
+     -dbc_no     | 63.9%  | 10.6%  | 63.6%  |  8.7%  | 52.3%  |  9.7%  | 52.1%  | 10.3%  | 0.001* |
+     -dbc_nly    | 67.4%  |  8.6%  | 67.2%  |  6.8%  | 53.0%  | 10.6%  | 52.9%  | 10.5%  | 0.002* |
+     -sub_all    | 71.0%  | 10.2%  | 70.9%  |  7.6%  | 53.1%  |  9.7%  | 53.0%  |  9.7%  | 0.001* |
+     -sub_nly    | 68.3%  |  9.6%  | 68.0%  |  7.3%  | 52.8%  | 10.4%  | 52.8%  | 10.3%  | 0.001* |
+     -sub_dbc    | 69.2%  |  9.6%  | 69.6%  |  7.3%  | 53.1%  |  9.9%  | 53.0%  |  9.8%  | 0.001* |
+     -sub_add    | 63.0%  | 12.3%  | 62.8%  |  8.7%  | 53.6%  | 10.0%  | 53.6%  | 10.0%  | 0.009* |
+     -dbc_yes    | 65.4%  | 13.2%  | 65.1%  |  9.7%  | 53.6%  | 11.6%  | 53.6%  | 11.6%  | 0.001* |
 
 ​    
 
@@ -1304,35 +1289,35 @@ distiller.is_strict = False
 distiller(2, 3, 4, 5, 6)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    1.is_responder   | 52.0%  | 10.1%  | 63.1%  | 12.7%  | 65.6%  | 11.7%  | 0.425  | -0.836 | 0.117  |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    1.is_responder| 50.5%  |  5.2%  | 62.6%  |  9.1%  | 51.1%  |  6.9%  | 62.1%  |  9.9%  | 0.757  |
     
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    2.No Significant difference (p_val: 0.090, F=2.2188) among:
-     -2DT            | 54.0%  | 13.1%  | 61.9%  | 14.2%  | 65.6%  | 11.7%  | 0.459  | -0.773 | -0.866 |
-     -vec            | 51.9%  | 10.1%  | 63.7%  | 12.5%  | 65.6%  | 11.7%  | 0.451  | -0.789 | 0.570  |
-     -roi            | 51.1%  |  9.0%  | 62.5%  | 11.9%  | 65.6%  | 11.7%  | 0.220  | -1.317 | 0.687  |
-     -2DA            | 51.7%  |  8.1%  | 64.2%  | 12.7%  | 65.6%  | 11.7%  | 0.653  | -0.465 | -0.946 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    2.Significant difference (p_val: 0.003, eta-sqr=0.241 F=5.91e+00) among:
+     -vec         | 51.4%  |  6.5%  | 65.0%  |  7.3%  | 52.5%  |  6.2%  | 65.0%  |  5.4%  | 0.913  |
+     -2DT         | 49.4%  |  3.6%  | 53.0%  | 13.5%  | 50.2%  |  6.9%  | 52.8%  | 15.5%  | 0.406  |
+     -2DA         | 51.6%  |  3.9%  | 66.6%  |  5.9%  | 49.1%  |  4.0%  | 63.9%  |  7.2%  | 0.182  |
+     -roi         | 49.6%  |  4.7%  | 62.9%  |  5.2%  | 51.2%  |  8.1%  | 62.8%  |  8.0%  | 0.706  |
     
-    3.Significant difference (p_val: nan, t_statnan BF=5.15e-01, d=nan) between:
-     -dbc_no         | 52.0%  | 10.1%  | 63.1%  | 12.7%  | 65.6%  | 11.7%  | 0.425  | -0.836 | 0.117  |
-     -dbc_yes        | 51.7%  | 10.6%  | 63.3%  | 13.1%  | 65.6%  | 11.7%  | 0.411  | -0.863 | 0.587  |
+    3.No Significant difference (p_val: 0.703, ) between:
+     -dbc_no      | 50.5%  |  5.2%  | 62.6%  |  9.1%  | 51.1%  |  6.9%  | 62.1%  |  9.9%  | 0.757  |
+     -dbc_yes     | 52.5%  |  7.3%  | 65.1%  |  6.9%  | 52.2%  |  7.3%  | 64.1%  |  6.6%  | 0.572  |
     
-    4.Significant difference (p_val: 1.3e-04, F=10.0763) among:
-     -ResNet         | 52.9%  | 10.9%  | 63.1%  | 13.5%  | 65.6%  | 11.7%  | 0.551  | -0.619 | -0.906 |
-     -GradientBoos...| 53.1%  | 13.4%  | 60.6%  | 12.3%  | 65.6%  | 11.7%  | 0.320  | -1.053 | -0.744 |
-     -SVC            | 50.0%  |  0.0%  | 65.6%  | 11.7%  | 65.6%  | 11.7%  |  nan   |  nan   | 2.000  |
+    4.No Significant difference (p_val: 0.180, eta-sqr=0.067 F=2.06e+00) among:
+     -GradientBoos| 50.8%  |  8.1%  | 62.3%  |  8.5%  | 53.6%  |  9.6%  | 62.2%  |  9.0%  | 0.701  |
+     -ResNet      | 50.5%  |  3.9%  | 59.8%  | 12.4%  | 49.7%  |  5.7%  | 58.4%  | 13.3%  | 0.266  |
+     -SVC         | 50.2%  |  1.1%  | 65.6%  |  2.2%  | 50.0%  |  2.7%  | 65.6%  |  3.0%  | 0.918  |
     
-    5.Significant difference (p_val: nan, t_statnan BF=1.65e-02, d=nan) between:
-     -Site           | 48.6%  |  8.1%  | 47.1%  | 17.8%  | 40.7%  | 18.9%  | 0.184  | 1.438  | 0.041  |
-     -Fold           | 52.0%  | 10.1%  | 63.1%  | 12.7%  | 65.6%  | 11.7%  | 0.425  | -0.836 | 0.117  |
+    5.No Significant difference (p_val: 0.727, ) between:
+     -Site        | 52.7%  |  4.6%  | 49.0%  | 15.8%  | 50.3%  |  6.1%  | 48.5%  | 18.0%  | 0.565  |
+     -Fold        | 50.5%  |  5.2%  | 62.6%  |  9.1%  | 51.1%  |  6.9%  | 62.1%  |  9.9%  | 0.757  |
     
-    6.Significant difference (p_val: 4.4e-56, F=171.8782) among:
-     -All            | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
-     -Extremes       | 63.8%  | 12.0%  | 63.8%  | 12.0%  | 50.0%  |  0.0%  | 0.007* | 3.440  | 1.241  |
-     -SameResponders | 50.8%  | 11.4%  | 50.7%  | 12.3%  | 51.1%  | 11.2%  | 0.864  | -0.177 | -0.850 |
-     -LongTreated    | 52.0%  | 10.1%  | 63.1%  | 12.7%  | 65.6%  | 11.7%  | 0.425  | -0.836 | 0.117  |
-     -Hiroshima      | 46.2%  | 14.1%  | 43.3%  | 15.5%  | 44.3%  | 14.4%  | 0.798  | -0.263 | -0.811 |
+    6.Significant difference (p_val: 0.002, eta-sqr=0.326 F=3.56e+01) among:
+     -LongTreated | 50.5%  |  5.2%  | 62.6%  |  9.1%  | 51.1%  |  6.9%  | 62.1%  |  9.9%  | 0.757  |
+     -SameResponde| 50.1%  |  7.2%  | 52.1%  | 10.0%  | 50.5%  |  8.0%  | 52.1%  |  9.3%  | 0.732  |
+     -Extremes    | 63.9%  | 10.6%  | 63.6%  |  8.7%  | 52.3%  |  9.7%  | 52.1%  | 10.3%  | 0.001* |
+     -Hiroshima   | 49.6%  |  7.1%  | 48.4%  |  8.0%  | 49.1%  |  9.2%  | 47.5%  | 10.6%  | 0.666  |
+     -All         | 50.5%  |  5.9%  | 53.6%  |  7.2%  | 50.4%  |  5.3%  | 53.2%  |  6.8%  | 0.657  |
 
 ​    
 
@@ -1342,22 +1327,23 @@ distiller(2, 3, 4, 5, 6)
 ```python
 all_clf_distiller = TableDistiller(pd.concat(
     (results_table_with_alternate_classifiers, statistics_calculator(results_table_with_alternate_classifiers)),
-    axis=1), 'is_responder', None, 'dbc_no', 'RandomForestClassifier', 'Fold', 'All', 'wk_2', is_strict=True, n_splits=n_splits)
+    axis=1), 'is_responder', None, 'dbc_no', 'RandomForestClassifier', 'Fold', 'All', 'wk_2', is_strict=True,
+    n_splits=n_splits)
 all_clf_distiller(1)
 all_clf_distiller.is_strict = False
 all_clf_distiller(4)
 ```
 
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    1.is_responder   | 49.3%  |  6.7%  | 56.6%  |  8.2%  | 56.9%  |  7.7%  | 0.143  | -1.603 | -0.590 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    1.is_responder| 52.1%  |  4.8%  | 55.3%  |  5.2%  | 51.3%  |  6.5%  | 54.3%  |  6.4%  | 0.463  |
     
-                     |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    4.Significant difference (p_val: 1.7e-20, F=34.2239) among:
-     -GradientBoos...| 52.0%  |  9.1%  | 56.5%  |  9.2%  | 56.9%  |  7.7%  | 0.300  | -1.099 | -0.812 |
-     -LogisticRegr...| 48.5%  | 10.0%  | 51.4%  | 10.3%  | 56.9%  |  7.7%  | 0.030  | -2.574 | 0.557  |
-     -ResNet         | 53.1%  |  9.6%  | 57.1%  |  9.4%  | 56.9%  |  7.6%  | 0.410  | -0.864 | -0.991 |
-     -RandomForest...| 49.3%  |  6.7%  | 56.6%  |  8.2%  | 56.9%  |  7.7%  | 0.143  | -1.603 | -0.590 |
-     -SVC            | 49.3%  |  2.4%  | 59.5%  |  7.9%  | 56.9%  |  7.7%  | 0.397  | -0.890 | -0.962 |
+                  |  bAcc  |  sbAc  |  Acc   |  sAcc  |  nbAc  |  snbA  |  nAcc  |  snAc  | p_val  |
+    4.No Significant difference (p_val: 0.220, eta-sqr=0.070 F=1.80e+00) among:
+     -RandomForest| 52.1%  |  4.8%  | 55.3%  |  5.2%  | 51.3%  |  6.5%  | 54.3%  |  6.4%  | 0.463  |
+     -ResNet      | 50.0%  |  3.9%  | 51.0%  |  8.3%  | 49.5%  |  4.7%  | 50.1%  |  8.2%  | 0.372  |
+     -LogisticRegr| 51.5%  |  6.3%  | 52.7%  |  6.2%  | 48.8%  |  6.1%  | 49.9%  |  6.1%  | 0.199  |
+     -SVC         | 50.5%  |  4.3%  | 55.9%  |  4.3%  | 49.9%  |  3.7%  | 55.8%  |  3.8%  | 0.545  |
+     -GradientBoos| 51.0%  |  8.3%  | 53.8%  |  7.4%  | 51.8%  |  6.7%  | 53.7%  |  6.5%  | 0.701  |
 
 ​    
 
@@ -1371,9 +1357,9 @@ distiller(7)
 ```
 
                      |  bacc  |  sbac  |  acc   |  sac   |  null  |  snul  | p_val  | t_stat | L10BF  |
-    7.No Significant difference (p_val: 0.917, t_stat-0.107 BF=-1.10e+00, d=-2.78e-02) between:
-     -wk_2           | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
-     -wk_1           | 51.5%  |  7.7%  | 57.9%  |  8.9%  | 56.9%  |  8.2%  | 0.365  | -0.953 | -0.933 |
+    7.No Significant difference (p_val: 0.703, ) between:
+     -wk_1        | 51.5%  |  7.7%  | 57.9%  |  8.9%  | 56.9%  |  8.2%  | 0.365  | -0.953 | -0.933 |
+     -wk_2        | 51.5%  |  7.9%  | 57.7%  |  8.9%  | 56.9%  |  7.7%  | 0.366  | -0.951 | -0.922 |
 
 ​    
 
@@ -1412,12 +1398,11 @@ bacc_fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 6))
 for ax_n, query, ax, c in zip(range(n_rows * n_cols), queries, axes.reshape(-1), cs):
     # Get data
     example = results_and_stats.loc[query]
-    score, null = example['balanced_accuracy'], example['null']
-    if len(example.shape) > 1:
-        score, null = flatten(score), flatten(null)
+    score, null = example['balanced_accuracy'], example['null_balanced_accuracy']
+    score, null = score.ravel(), null.ravel()
 
     # Plot
-    ax.hist(np.subtract(score, null) * 100, bins, density=True, color=c, label=hr_pop[query[-2]])
+    ax.hist((score.mean() - null) * 100, bins, density=True, color=c, label=hr_pop[query[-2]])
     ax.plot([0, 0], [0, ylim], c='k')
     acc_explainer = '' if ax_n else '(bAcc)'
     if not ax_n % n_cols:
@@ -1437,12 +1422,13 @@ for ax_n, query, ax, c in zip(range(n_rows * n_cols), queries, axes.reshape(-1),
     ax.xaxis.set_major_formatter(mtick.PercentFormatter())
     plt.suptitle('Predicting Response Using Various Sets of ROI Data in two populations', fontsize=18)
 bacc_fig.tight_layout()
+plt.show()
 bacc_fig.savefig(figdir.append(f'bAcc_histograms.png'))
 ```
 
 
 ​    
-![png](.readme/output_82_0.png)
+![png](.readme/output_79_0.png)
 ​    
 
 
@@ -1459,20 +1445,13 @@ The reasons are:
 2. The classes in the entire data set are balanced 50%/50%. When we use (even stratified) cross-validation, whenever there are more samples of class A in the train set, there will be more samples of B in the test set. This will incur a deviation from the 50% balance of size ~ `1/(sample_size/n_splits)` (deviates due to rounding of test set sizes).
 3. Because the "mean of balanced accuracies" != "the balanced accuracy of the means"
 
-Based on simple calculations using the subject samples and labels we can provide an estimate of the expected `null score` and compare this with the measured null score:
-
-
-```python
-measured_sites_accs = [np.mean(flatten(results_and_stats.loc[q]['null'])) for q in (
-    ('is_responder', sN, sN, sN, 'Fold', 'Extremes'), ('is_responder', 'roi', sN, sN, 'Site', 'All')
-)]
-```
+Based on simple calculations using the subject samples and labels we can provide an estimate of the expected `null score` and compare this with the measured null score.
 
 
 ```python
 # Retrieve the accuracy score from our results
 queries = ('Fold', 'Extremes'), ('Site', 'All')
-measured_sites_accs = [np.mean(flatten(results_and_stats.loc[('is_responder', sN, sN, sN, *q)]['null'])) for q in
+measured_sites_accs = [np.mean(flatten(results_and_stats.loc[('is_responder', sN, sN, sN, *q)]['null_accuracy'])) for q in
                        queries]
 
 print('We can say the following about the null accuracy score:')
@@ -1499,7 +1478,7 @@ for i, ((cv_name, (cv_scheme, _)), example_population, measured_sites_acc) in en
         f'    - Measured: {measured_sites_acc:.1%}\n')
 
 s = results_and_stats.loc['is_responder', '2DT', 'dbc_no', 'ResNet', 'Fold', 'All', 'wk_2']['accuracy']
-n = results_and_stats.loc['is_responder', '2DT', 'dbc_no', 'ResNet', 'Fold', 'All', 'wk_2']['null']
+n = results_and_stats.loc['is_responder', '2DT', 'dbc_no', 'ResNet', 'Fold', 'All', 'wk_2']['null_accuracy']
 print(f'3.  The mean-balanced-accuracy (bAcc) is not the same as balanced-accuracy of the means:\n'
       f'    Mean accuracy score: {np.mean(s):.1%} ± {np.std(s):.1%}, Mean null score: {np.mean(n):.1%} ± {np.std(n):.1%}\n'
       f'    - Balanced accuracy of means:  {np.mean(s) / np.mean(n) / 2:.1%}\n'
@@ -1507,28 +1486,28 @@ print(f'3.  The mean-balanced-accuracy (bAcc) is not the same as balanced-accura
 ```
 
     We can say the following about the null accuracy score:
-    1.  In Leave-Fold-Out CV of Extremes the dominant class was mismatched 80/100 times:
+    1.  In Leave-Fold-Out CV of Extremes the dominant class was mismatched 8/10 times:
         - Expected: 46.9%
-        - Measured: 50.0%
+        - Measured: 52.9%
     
     2.  In Leave-Site-Out CV of All the dominant class was mismatched 4/6 times:
         - Expected: 44.3%
-        - Measured: 65.9%
+        - Measured: 48.7%
     
     3.  The mean-balanced-accuracy (bAcc) is not the same as balanced-accuracy of the means:
-        Mean accuracy score: 57.1% ± 9.6%, Mean null score: 56.9% ± 7.6%
-        - Balanced accuracy of means:  47.4%
-        - Mean of balanced accuracies: 47.9%
+        Mean accuracy score: 48.1% ± 6.1%, Mean null score: 46.6% ± 6.4%
+        - Balanced accuracy of means:  51.6%
+        - Mean of balanced accuracies: 51.8%
 
 ​    
 
 Now previously, I have attempted to fix this by replacing in this notebook:
 ```
-  previous_result['null'] = [np.mean(y[test] == y[train].mode()[0]) for train, test in list(split_null)]
+  previous_result['null_accuracy'] = [np.mean(y[test] == y[train].mode()[0]) for train, test in list(split_null)]
 ```
 with
 ```
-  previous_result['null'] = np.array([np.mean(y[test]) if y.mean() == 0.5 else np.mean(y[test] == y[train].mode()[0]) for train, test in list(split_null)])
+  previous_result['null_accuracy'] = np.array([np.mean(y[test]) if y.mean() == 0.5 else np.mean(y[test] == y[train].mode()[0]) for train, test in list(split_null)])
 ```
 And adding a special case in the `torch_val_score` method when `if y.mean() == 0.5`. But creates an overestimation of the performance and only makes the results harder to interpret, so I have since removed them.
 
@@ -1542,12 +1521,9 @@ We run simulations for two populations `All` and `Extremes` and two data types, 
 n_splits = 40
 n_repeats = 2
 
-# Preallocate an array to which we can store the feature importance
-importance_array = np.zeros((n_splits * n_repeats, len(bool_var)))
-
 # Define the machine learning pipeline
 combat = list(cv_schemes.values())[-1][-1]
-pipeline = make_pipeline(imputer, combat, scaler, selector, classifiers[0], )
+pipeline = make_pipeline(imputer, combat, scaler, selector, LogisticRegression, )
 
 # Preallocate two dictionaries: One to store the simulation bAccs, one to store results
 coef_bacc = make_empty_nest(['All', 'Extremes'], ['dbc_no', 'sub_all'], bottom=[])
@@ -1584,14 +1560,8 @@ for population_name, coef_dict_b in coef_dict.items():
         coef_bacc[population_name][data_type] = np.mean(b_accs)
 ```
 
-    80it [01:44,  1.31s/it]
-    80it [00:38,  2.10it/s]
-    80it [00:35,  2.25it/s]
-    80it [00:22,  3.49it/s]
-
-
 ### Cortical Show
-Show fancy
+We can then visualize the coefficients in Blender. To export them we will store them in a Look-Up Table (LUT)
 
 
 ```python
@@ -1619,14 +1589,14 @@ for pop, hemi, map_prop in product(('All', 'Extremes'), ("Left", "Right"), ('sur
 pd.concat(dfs['Extremes'], axis=1)
 ```
 
-    Coefficient Look-Up-Table created for surf in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_surf-coefs-All.pkl)
-    Coefficient Look-Up-Table created for thick in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_thick-coefs-All.pkl)
-    Coefficient Look-Up-Table created for surf in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_surf-coefs-All.pkl)
-    Coefficient Look-Up-Table created for thick in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_thick-coefs-All.pkl)
-    Coefficient Look-Up-Table created for surf in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_surf-coefs-Extremes.pkl)
-    Coefficient Look-Up-Table created for thick in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_thick-coefs-Extremes.pkl)
-    Coefficient Look-Up-Table created for surf in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_surf-coefs-Extremes.pkl)
-    Coefficient Look-Up-Table created for thick in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_thick-coefs-Extremes.pkl)
+    Coefficient Look-Up-Table loaded for surf in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_surf-coefs-All.pkl)
+    Coefficient Look-Up-Table loaded for thick in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_thick-coefs-All.pkl)
+    Coefficient Look-Up-Table loaded for surf in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_surf-coefs-All.pkl)
+    Coefficient Look-Up-Table loaded for thick in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_thick-coefs-All.pkl)
+    Coefficient Look-Up-Table loaded for surf in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_surf-coefs-Extremes.pkl)
+    Coefficient Look-Up-Table loaded for thick in Left hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\LH-LRC_thick-coefs-Extremes.pkl)
+    Coefficient Look-Up-Table loaded for surf in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_surf-coefs-Extremes.pkl)
+    Coefficient Look-Up-Table loaded for thick in Right hemisphere. (D:\repositories\ENIGMA_lean\data\fsaverage\manual_labels\RH-LRC_thick-coefs-Extremes.pkl)
 
 
 
@@ -1985,7 +1955,8 @@ for img_pop in ('Extremes',):
     axes[-1].axis('off')
     axes[0].set_ylabel('Left Hemisphere')
     axes[n_cols + 1].set_ylabel('Right Hemisphere')
-    perf = np.mean(results_dict['roi']['dbc_no'][img_pop]['Fold']['GradientBoostingClassifier']['is_responder']['wk_2']['balanced_accuracy'])
+    perf = np.mean(results_dict['roi']['dbc_no'][img_pop]['Fold']['GradientBoostingClassifier']['is_responder']['wk_2'][
+                       'balanced_accuracy'])
     n_part = len(data_dict['roi']['dbc_no'][img_pop][0])
     # plt.suptitle(f'Coefficients for {img_pop} Population (n = {n_part:.0f}, bAcc = {bacc:.1%})')
     plt.suptitle(f'Coefficients for the Extreme (Non-)responders Subpopulation (n = {n_part:.0f}, bAcc = {perf:.1%})')
@@ -1995,18 +1966,33 @@ plt.show()
 
 
 ​    
-![png](.readme/output_93_0.png)
+![png](.readme/output_89_0.png)
 ​    
 
 
 
 ```python
+# We never ended up using this because it was hard to retrace 
+# which "pixels" were dropped in preprocessing, so they might 
+# not be placed correctly (23 out of 900 were dropped)
+X, y, _ = data_dict['vec']['dbc_no']['Extremes']
+clf = LogisticRegression()
+clf.fit(X, y)
+coef = np.squeeze(clf.coef_)
+
 X_thc2, _ = load_proj_df(data, 'Thickness')
+
+imps = np.zeros(30 * 30)
+counter = 0
+for i, pixel in enumerate(X_thc2.var().to_numpy().ravel()):
+    if pixel >= 0.002:
+        imps[i] = clf.coef_[0][counter]
+        counter += 1
 
 titles = 'Median Imporance', 'Median thickness', 'aparc.a2009s.annot'
 
-map_imp = np.reshape(np.median(importance_array, axis=0), [30, 30])
-map_thk = np.reshape(np.median(X_thc2, axis=0), [30, 30])
+map_imp = np.reshape(imps, (30, 30))
+map_thk = np.reshape(np.median(X_thc2, axis=0), (30, 30))
 map_img = np.load(results_dir.append('aggregated_label_annot_res-32.npy'))
 
 fig, axes = plt.subplots(1, len(titles), figsize=(10, 4))
@@ -2023,12 +2009,12 @@ fig.tight_layout()
 fig.show()
 ```
 
-    100%|██████████| 252/252 [00:00<00:00, 2571.51it/s]
+    100%|██████████| 252/252 [00:00<00:00, 2483.71it/s]
 ​    
 
 
 ​    
-![png](.readme/output_94_1.png)
+![png](.readme/output_90_1.png)
 ​    
 
 
@@ -2088,277 +2074,10 @@ for population, population_coef_dict in coef_dict.items():
 
 
 ```python
-imp_dfs['All']
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-    
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-    
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Left</th>
-      <th>Right</th>
-      <th>Middle / NA</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>pal</th>
-      <td>0.02301</td>
-      <td>0.024482</td>
-      <td>0.025529</td>
-    </tr>
-    <tr>
-      <th>amyg</th>
-      <td>0.022517</td>
-      <td>0.01921</td>
-      <td>0.018849</td>
-    </tr>
-    <tr>
-      <th>accumb</th>
-      <td>0.024082</td>
-      <td>0.016063</td>
-      <td>0.020334</td>
-    </tr>
-    <tr>
-      <th>put</th>
-      <td>0.019159</td>
-      <td>0.018086</td>
-      <td>0.018402</td>
-    </tr>
-    <tr>
-      <th>hippo</th>
-      <td>0.01731</td>
-      <td>0.018122</td>
-      <td>0.015892</td>
-    </tr>
-    <tr>
-      <th>thal</th>
-      <td>0.017074</td>
-      <td>0.014313</td>
-      <td>0.01622</td>
-    </tr>
-    <tr>
-      <th>caud</th>
-      <td>0.014919</td>
-      <td>0.014384</td>
-      <td>0.014036</td>
-    </tr>
-    <tr>
-      <th>LatVent</th>
-      <td>0.015227</td>
-      <td>0.013728</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>ICV</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.020306</td>
-    </tr>
-    <tr>
-      <th>vent</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.015081</td>
-    </tr>
-    <tr>
-      <th>Age</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>is_ad</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>is_recurrent</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>is_female</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>Age_of_Onset</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>Normalized_Pretreatment_Severity</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
-imp_dfs['Extremes']
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-    
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-    
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Left</th>
-      <th>Right</th>
-      <th>Middle / NA</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>accumb</th>
-      <td>0.021405</td>
-      <td>0.030332</td>
-      <td>0.026231</td>
-    </tr>
-    <tr>
-      <th>pal</th>
-      <td>0.02372</td>
-      <td>0.026119</td>
-      <td>0.025201</td>
-    </tr>
-    <tr>
-      <th>amyg</th>
-      <td>0.024351</td>
-      <td>0.023221</td>
-      <td>0.021141</td>
-    </tr>
-    <tr>
-      <th>hippo</th>
-      <td>0.019201</td>
-      <td>0.018283</td>
-      <td>0.018085</td>
-    </tr>
-    <tr>
-      <th>thal</th>
-      <td>0.013892</td>
-      <td>0.012533</td>
-      <td>0.012153</td>
-    </tr>
-    <tr>
-      <th>put</th>
-      <td>0.011277</td>
-      <td>0.015345</td>
-      <td>0.011658</td>
-    </tr>
-    <tr>
-      <th>caud</th>
-      <td>0.012747</td>
-      <td>0.011662</td>
-      <td>0.012845</td>
-    </tr>
-    <tr>
-      <th>ICV</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.027722</td>
-    </tr>
-    <tr>
-      <th>LatVent</th>
-      <td>0.01307</td>
-      <td>0.011915</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>vent</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>0.012293</td>
-    </tr>
-    <tr>
-      <th>Age</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>is_ad</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>is_recurrent</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>is_female</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>Age_of_Onset</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-    <tr>
-      <th>Normalized_Pretreatment_Severity</th>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-      <td>&lt;NA&gt;</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
 print('start time:', results_uid)
 print('finish time:', datetime.now().strftime("%Y%m%d-%H%M%S"))
 ```
 
-    start time: 20240418-181259-postRebuttalLongLong
-    finish time: 20240423-075004
+    start time: 20240807-135247-postRebuttal2-Night2
+    finish time: 20240810-015510
+

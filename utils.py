@@ -22,12 +22,15 @@ import time
 from glob import glob
 from classes import cohorts, colors
 import seaborn as sns
-from pingouin import ttest, rm_anova, compute_effsize, bayesfactor_ttest
 from scipy import stats
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from pathlib import Path
 from typing import Callable
+from IPython.core.debugger import Pdb
+from PyPerMANOVA import permutational_analysis
+
+breakpoint = Pdb().set_trace
+
 np.seterr(divide='ignore')
 
 bool_fmt = lambda v: f'{np.sum(v):,.0f} '.rjust(3) + f'({np.mean(v):,.1%})'
@@ -37,6 +40,95 @@ con2_fmt = lambda v: f'{np.mean(v):,.2f}'.rjust(5) + f' ± {np.std(v):,.2f}'
 int_fmt = lambda v: f'{np.mean(v):,.0f} ± {np.std(v):,.1f}'
 # void = lambda *args, **kwargs: _
 # do_nothing = lambda arg: arg
+
+
+class Scorer:
+    '''
+    Behaves mostly a dict but can be called by sklearn methods to provide metrics.
+    Allows for the measuring and internal storing of multiple scores using a dictionary as input,
+    while still returning a float upon call, which is an essential requirement by functions that
+    do not support dictionary-style scorers such as permutation_test_score
+    '''
+
+    def __init__(self, scoring: dict):
+        # scoring example: {'accuracy': accuracy, 'balanced_accuracy': balanced_accuracy}
+        self.scoring = scoring
+        self.scores = {k: [] for k in self.scoring}
+
+    def reset(self):
+        self.scores = {k: [] for k in self.scoring}
+
+    def __call__(self, estimator, X, y) -> float:
+        # Predict
+        y_pred = estimator.predict(X)
+        # Store all score metrics in attribute
+        for name, call in self.scoring.items():
+            self.scores[name].append(call(y, y_pred))
+        # Return first score metric
+        return self.scores[list(self)[0]][-1]
+
+    def __getitem__(self, key):
+        return self.scores[key]
+
+    def __iter__(self):
+        return self.scores.__iter__()
+
+    def __next__(self):
+        return self.scores.next()
+
+    def __repr__(self):
+        return self.scores.__repr__()
+
+    def items(self):
+        return self.scores.items()
+
+
+def format_subsets_to_permutedf(subsets: list[pd.DataFrame], prim_out='accuracy') -> pd.DataFrame:
+    """
+    The machine learning results come as list of sub-tables where each sub-table abides a specific
+    query from the total results table. This list is to be converted to a pandas DataFrame to be
+    used with the PyPerMANOVA tool.
+    Args:
+        subsets:    list of pandas data frames
+        prim_out:   string, which outcome to perform testing for
+
+    Returns:        pandas dataframe
+
+    """
+    values = []
+    indices = []
+    for i, subset in enumerate(subsets):
+        for _, row in subset.iterrows():
+            value = [[v] for v in row[prim_out].ravel().tolist()]
+            values.extend(value)
+            indices.extend([i] * len(value))
+    df = pd.DataFrame(data=values, index=indices)
+
+    # # There exists an alternative approach where multiple features are incorporated.
+    # # Then we would not have to supply prim_out.
+    # # But it's complex and since bAcc and Acc are so closely related, we don't care.
+    # values = []
+    # indices = []
+    # for i, subset in enumerate(subsets):
+    #     for _, row in subset.iterrows():
+    #         accs = [v for v in row['accuracy'].ravel().tolist()]
+    #         baccs = [v for v in row['balanced_accuracy'].ravel().tolist()]
+    #         values.extend([v for v in zip(accs, baccs)])
+    #         indices.extend([i] * len(values))
+    # df = pd.DataFrame(data=accs, index=indices)
+    return df
+
+
+def permanova_test(subsets: list[pd.DataFrame], prim_out='accuracy') -> tuple[float, float, float]:
+    df = format_subsets_to_permutedf(subsets, prim_out)
+    perm_res, post_res = permutational_analysis(data=df,
+                                                mapping=None,
+                                                norm="column",
+                                                by="row",
+                                                )
+    pval, eta, F = perm_res.Pval.values[0], perm_res['eta-sqr'].values[0], perm_res.F.values[0]
+    return pval, eta, F
+
 
 def count_values(d: dict, i=0):
     """
@@ -270,33 +362,35 @@ class Timer(object):
         print('Elapsed: %s' % (time.time() - self.tstart))
 
 
-def corr_rep_kfold_cv_test(a: list, b: list, n_splits: int, n_samples: int) -> tuple[float, float]:
-    """
-        Implementation of Bouckaert and Franks (2004) corrected repeated k-fold cv test.
 
-        This function calculates a corrected test statistic and p-value for comparing
-        the performance of two models using the corrected repeated k-fold cross-validation
-        test described by Bouckaert and Franks (2004).
-
-        Parameters:
-        a (list): List of performance scores for model A.
-        b (list): List of performance scores for model B.
-        n_splits (int): Number of splits/folds in the cross-validation.
-        n_samples (int): Total number of instances in the dataset.
-
-        Returns:
-        tuple[float, float]: Corrected test statistic and corresponding p-value.
-    """
-    r = len(a) // n_splits  # number of r-times repeats as integer
-    k = n_splits  # number of k-folds as integer
-    n1 = n_samples // n_splits * (n_splits - 1)  # number of instances used for training
-    n2 = n_samples // n_splits  # number of instances used for testing
-    x = np.subtract(a, b)  # observed differences
-    m = x.mean()  # mean estimate
-    s = np.sum((x - m) ** 2) / (k * r - 1)  # variance estimate
-    t_stat = m / np.sqrt((1 / (k * r) + n2 / n1) * s)  # corrected test statistic
-    p_val = stats.t.sf(np.abs(t_stat), n_splits - 1) * 2  # p-value
-    return t_stat, p_val
+# In Rebuttal 2 we switched to non-parametric testing
+# def corr_rep_kfold_cv_test(a: list, b: list, n_splits: int, n_samples: int) -> tuple[float, float]:
+#     """
+#         Implementation of Bouckaert and Franks (2004) corrected repeated k-fold cv test.
+#
+#         This function calculates a corrected test statistic and p-value for comparing
+#         the performance of two models using the corrected repeated k-fold cross-validation
+#         test described by Bouckaert and Franks (2004).
+#
+#         Parameters:
+#         a (list): List of performance scores for model A.
+#         b (list): List of performance scores for model B.
+#         n_splits (int): Number of splits/folds in the cross-validation.
+#         n_samples (int): Total number of instances in the dataset.
+#
+#         Returns:
+#         tuple[float, float]: Corrected test statistic and corresponding p-value.
+#     """
+#     r = len(a) // n_splits  # number of r-times repeats as integer
+#     k = n_splits  # number of k-folds as integer
+#     n1 = n_samples // n_splits * (n_splits - 1)  # number of instances used for training
+#     n2 = n_samples // n_splits  # number of instances used for testing
+#     x = np.subtract(a, b)  # observed differences
+#     m = x.mean()  # mean estimate
+#     s = np.sum((x - m) ** 2) / (k * r - 1)  # variance estimate
+#     t_stat = m / np.sqrt((1 / (k * r) + n2 / n1) * s)  # corrected test statistic
+#     p_val = stats.t.sf(np.abs(t_stat), n_splits - 1) * 2  # p-value
+#     return t_stat, p_val
 
 
 def get_rgb_cbar(n_shades=200, bar_width=25) -> np.array:
@@ -924,7 +1018,7 @@ def safe_dict_get(start_dict: dict, *args: str) -> dict:
     return read_dict
 
 
-def torch_val_score(pipeline, X: np.array, y: pd.Series, cv, groups, verbose=False, return_pipeline='none'):
+def torch_val_score(pipeline, X: np.array, y: pd.Series, cv, groups, verbose=False, return_pipeline='none', do_permute=False):
     """
     A cross_val_score implementation for the TorchTrainer class.
     Only difference is that this method returns a dict of outcomes, and not just a float score.
@@ -949,7 +1043,10 @@ def torch_val_score(pipeline, X: np.array, y: pd.Series, cv, groups, verbose=Fal
         pipeline_copy = deepcopy(pipeline)
         # Get data
         X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        if do_permute:  # Permute (optional)
+            y_train, y_test = y.iloc[train_index], y.iloc[np.random.permutation(test_index)]
+        else:
+            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         # Fit
         pipeline_copy.fit(X_train, y_train)
         # Get measures
@@ -1316,16 +1413,40 @@ def dumb_md_formatter(*args, spacing=8) -> str:
     return f"|{'|'.join([arg.center(spacing) for arg in args])}|"
 
 
-def subset_score(subset, alpha=0.05, prim_out="accuracy"):
+def subset_score(subset: pd.DataFrame, alpha=0.05, prim_score="accuracy") -> tuple[str, bool]:
+    """
+    Args:
+        subset:         a Pandas table with results to be compared
+        alpha:          significance threshold as float
+        prim_score:     scoring method to be compared for significance
+
+    Returns:
+        A string that can be printed to summarize the results, e.g.
+        '| 50.0%  |  5.7%  | 52.4%  |  6.6%  | 50.3%  |  5.3%  | 52.8%  |  6.4%  | 0.858  |'
+        and a boolean if the funcion was successful
+    """
     sep = ';'
-    formats = '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{}', '{}', '{:.3f}'
+    #         'bAcc',   'sbAc',   'Acc',    'sAcc',    'nbAc',   'snbA',   'nAcc',   'snAc',   'p_val'
+    formats = '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{:.1%}', '{}'
 
     broken = False
     if not subset.empty:
-        if not subset[prim_out].empty and not subset[prim_out].isna().all():
-            sub_acc = flatten(subset['accuracy'])
-            sub_bacc = flatten(subset['balanced_accuracy'])
-            sub_null = flatten(subset["null"])
+        if not subset[prim_score].empty and not subset[prim_score].isna().all():
+            try:
+                sub_acc = np.array(subset['accuracy'].to_list())
+                sub_bacc = np.array(subset['balanced_accuracy'].to_list())
+                sub_null_acc = np.array(subset["null_accuracy"].to_list())
+                sub_null_bacc = np.array(subset["null_balanced_accuracy"].to_list())
+            except ValueError:
+                #  A few results have are empty axes. They're easy to fix, tracing back is harder,  e.g.
+                #  Odd shape fixed: [(1, 1, 5), (1, 1, 5), (1, 5), (1, 5), (1, 5), (1, 5), (1, 5), (1, 5), (1, 5)]
+                # print('Odd shape fixed:', [i.shape for i in subset['accuracy']])
+                # Setting (=correcting) values in an array is always challenging so we will not even try
+                sub_acc = np.array([vi.reshape(subset['accuracy'][0].shape) for vi in subset['accuracy']])
+                sub_bacc = np.array([vi.reshape(subset['balanced_accuracy'][0].shape) for vi in subset['balanced_accuracy']])
+                sub_null_acc = np.array([vi.reshape(subset["null_accuracy"][0].shape) for vi in subset["null_accuracy"]])
+                sub_null_bacc = np.array([vi.reshape(subset["null_balanced_accuracy"][0].shape) for vi in subset["null_balanced_accuracy"]])
+
             if np.isnan(sub_acc).all():
                 broken = True
         else:
@@ -1336,24 +1457,28 @@ def subset_score(subset, alpha=0.05, prim_out="accuracy"):
     if broken:
         formatted = sep * (len(formats) - 1)
     else:
-        _, p_val = stats.combine_pvalues(subset['pvalue'].dropna().astype(float))
-        t_stat = np.mean(subset['tstat'])
-        notice = '*' if p_val < alpha and np.mean(sub_acc) > np.mean(sub_null) else ' '
+        try:
+            _, p_val = stats.combine_pvalues(subset['pvalue'].dropna().astype(float))
+        except ValueError:
+            print('Two columns of p-values existed')
+            _, p_val = stats.combine_pvalues(subset['pvalue'].dropna().values.T[0].astype(float))
+        # t_stat = np.mean(subset['tstat'])
+        notice = '*' if p_val < alpha and np.mean(sub_acc) > np.mean(sub_null_acc) else ' '
 
-        p_val = stats.t.sf(np.abs(t_stat), 10 - 1) * 2
+        # p_val = stats.t.sf(np.abs(t_stat), 10 - 1) * 2
         fmted_pval = f'{p_val:.3f}' if p_val > 0.001 else f'{p_val:.1e}'
-        fmted_tstat = f'{t_stat:.3f}' if t_stat < 100 else f'{t_stat:.1e}'
-        bf = np.mean([np.log10(x) for x in subset['bayesfactor'].dropna()])
+        # fmted_tstat = f'{t_stat:.3f}' if t_stat < 100 else f'{t_stat:.1e}'
+        # bf = np.mean([np.log10(x) for x in subset['bayesfactor'].dropna()])
         values = (
-            np.mean(sub_bacc),
-            np.std(sub_bacc),
-            np.mean(sub_acc),
-            np.std(sub_acc),
-            np.mean(sub_null),
-            np.std(sub_null),
-            f'{fmted_pval}{notice}',
-            fmted_tstat,
-            bf,
+            np.mean(sub_bacc),  # bAcc
+            np.std(sub_bacc),  # sbAcc
+            np.mean(sub_acc),  # Acc
+            np.std(sub_acc),  # sAcc
+            np.mean(sub_null_bacc),  # nbAc
+            np.std(sub_null_bacc),  # snbA
+            np.mean(sub_null_acc),  # nAcc
+            np.std(sub_null_acc),  # snAc
+            f'{fmted_pval}{notice}',  # p_val
         )
         formatted = sep.join(formats).format(*values)
 
@@ -1379,6 +1504,142 @@ def subpop_hists(data, populations: dict):
     return resp_fig
 
 
+def paired_permutation_test(subsets: list[pd.DataFrame], prim_out: str) -> float:
+    a, b = subsets
+    # We can compute effect size using Bayesian Estimation Supersedes the t-test
+    # p_values = []
+    # t_stats = []
+    # b_factors = []
+    # effsizes = []
+    # For every "configuration"
+    for r, subset_idx in enumerate(a.index):
+        if subset_idx not in b.index:
+            # Skip configs not available for both (should not be possible)
+            continue
+        """
+        Permutation Tests as Statistical Significance Tests
+        Based on an implementation:
+        https://mostafa-amin.com/post/permutation-significance-tests/
+        but following the conservative instead of unbiased p-value calculation method:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.permutation_test.html
+        """
+
+        # 2D np.array of size [ n_repeats x n_folds ]
+        model_a_score = a.loc[subset_idx][prim_out]
+        model_b_score = b.loc[subset_idx][prim_out]
+
+        # 3D np.array of size [ n_permutations x n_repeats x n_folds ]
+        model_a_null = a.loc[subset_idx]['null_' + prim_out]
+        model_b_null = a.loc[subset_idx]['null_' + prim_out]
+
+        # 3D np.array of size [ n_permutations x n_repeats x n_folds ]
+        permutation_scores = model_a_null - model_b_null
+        n_permutations = permutation_scores.shape[0]
+
+        try:
+            # Results are paired in most cases
+            score = np.abs(model_a_score - model_b_score)
+            # And we can repeat them to perfectly match permutation results
+            score = np.moveaxis(np.repeat(score[:, :, np.newaxis], n_permutations, axis=2), -1, 0)
+        except ValueError:
+            # But not in LSO vs RSKF CV
+            score = np.abs(model_a_score.mean() - model_b_score.mean())
+        # In permutation_test_score the p-value is defined as (C + 1) / (n_permutations + 1)
+        pvalue = (np.mean(permutation_scores >= score) + 1.0 / (n_permutations + 1))
+
+        #
+        # if isinstance(model_a_score, Iterable) and isinstance(model_b_score, Iterable):
+        #     population_n = a.iloc[r]['population']
+        #     is_site_cv = 'Site' in a.index[r]
+        #     n_spl = len(model_a_score) if is_site_cv else self.n_splits
+        #     try:
+        #         try:
+        #             # t_stat, p_value = corr_rep_kfold_cv_test(model_a_score, model_b_score, n_spl, population_n)
+        #             p_value = perm_comp_test(model_a_score, model_b_score)
+        #         except ZeroDivisionError as e:
+        #             breakpoint()
+        #             raise ZeroDivisionError(f'{e} error\n'
+        #                                     f'The number of splits/folds was probably misconfigured.\n'
+        #                                     f'Currenty, n_splits = {n_spl} by {"site" if is_site_cv else "fold"}')
+        #     except ValueError:  # not related t-test e.g. K-fold vs Site
+        #         ttest_stats = ttest(model_a_score, model_b_score, paired=False)
+        #         t_stat, p_value = ttest_stats['T'][0], ttest_stats['p-val'][0]
+        #     bf = bayesfactor_ttest(t_stat, nx=population_n, paired=True)
+        #     d2 = compute_effsize(model_a_score, model_b_score, paired=True)
+        #     b_factors.append(bf if bf < 100 else 100)
+        #     p_values.append(p_value)
+        #     t_stats.append(t_stat)
+        #     effsizes.append(d2)
+        # if any(p_values):
+        #     _, p_val = stats.combine_pvalues(p_values)
+        #     p_val = stats.t.sf(np.abs(np.mean(t_stats)), 10 - 1) * 2
+        #     bf = np.nanmean(np.log10(b_factors))
+        #     d1 = np.mean(effsizes)
+        # else:
+        #     print(f'{col_num + 1}. Failed ({", ".join(col_vals)})\n')
+        #     return
+    return pvalue
+
+# In Rebuttal 2 we switched to non-parametric testing
+# def anova_test(subsets: list[pd.DataFrame]) -> tuple[str, float]:
+#     # We can do this with Scipy.stats, but it does not return as many outcomes
+#     # stats = f_oneway(subsets)
+#     subset_scores = [ss[self.prim_out] for ss in subsets]
+#     # So we do it with Pingouin. Shout out for the shittiest data formatting requirement!
+#     # This is really complex because values can be None (and you cannot iterate over them
+#     # and there are also different cross-validation schemes, for which the fold_n needs
+#     # to be adjusted!
+#     vals = []
+#     result_length_stack = []
+#     cats = []
+#     # Pair outcomes
+#     for i, ss in enumerate(subset_scores):
+#         for cf in ss.keys():
+#             if cf in ss:
+#                 if ss[cf] is not None:
+#                     val = ss[cf]
+#                     if not isinstance(val, list):
+#                         val = val.tolist()
+#                     n_vals = len(val)
+#                     vals.extend(val)
+#                     result_length_stack.append(n_vals)
+#                     cats.append([i] * n_vals)
+#     fold_ns = flatten(
+#         [list(range(self.n_splits)) * (rl // self.n_splits) + list(range(rl % self.n_splits)) for rl in
+#          result_length_stack])
+#     cats = flatten(cats)
+#     pingouin_df = pd.DataFrame(np.stack([cats, vals, fold_ns]).T, columns=['category', 'value', 'fold'])
+#     # stats = anova(pingouin_df, dv='value', between='category')
+#
+#     stacked_uniques = []
+#     stacked_categories = []  # adjust for repeats by aggregating them
+#     stacked_folds = []
+#     for cat in pingouin_df['category'].unique():
+#         for fol in pingouin_df['fold'].unique():
+#             duplicates = pingouin_df[(pingouin_df['category'] == cat) & (pingouin_df['fold'] == fol)]
+#             try:
+#                 stacked_uniques.append(np.nanmean(np.array(flatten(duplicates['value']))))
+#             except Exception as e:
+#                 print('Return 2:', e)
+#                 return subsets
+#             stacked_categories.append(cat)
+#             stacked_folds.append(fol)
+#             # if fol:
+#             #    break
+#     pingouin_df = pd.DataFrame(zip(stacked_categories, stacked_uniques, stacked_folds),
+#                                columns=['category', 'value', 'fold'])
+#     try:
+#         anova_stats = rm_anova(pingouin_df, dv='value', within='category', subject='fold')
+#         # As far as I have tested, pingouin.anova()['p-unc'] = f_oneway()['p-val']
+#         p_val = anova_stats['p-unc'].values[0]
+#         eta = anova_stats['F'].values[0]
+#     except LinAlgError:  # Eigenvalues did not converge
+#         p_val = 6.9
+#         eta = 6.9
+#     summary_str = f'F={eta:.4f}'
+#     return summary_str, p_val
+
+
 class TableDistiller:
     """
 
@@ -1397,7 +1658,7 @@ class TableDistiller:
     :return:
     """
 
-    def __init__(self, results_table, *args, spacing=15, n_splits=10, is_strict=False, verbose=False, prim_out="accuracy"):
+    def __init__(self, results_table, *args, spacing=15, n_splits=10, is_strict=False, verbose=False, prim_out="balanced_accuracy"):
         self.alpha = 0.05
         self.col_dict = {}
         for j in range(len(results_table.index[0])):
@@ -1411,37 +1672,88 @@ class TableDistiller:
         self.results_table = results_table
         self.prim_out = prim_out
 
-    def __call__(self, *col_nums, print_head=True):
-        if not col_nums:
+    def __call__(self, *col_nums, print_head=True) -> None:
+        """
+        Prints a header, or a summary one ore more of the columnd, namely:
+            (1) Label, (2) Data Representation, (3) Inclusion of clinical data,
+            (4) ML Model, (5) CV method, (6) Subpopulation, (7) Inclusion point
+
+        Generally these columns contain values such as the following:
+            (1) 'is_responder'
+            (2) 'roi', 'vec', '2DT', '2DA'
+            (3) 'dbc_yes', 'dbc_no'
+            (4) 'SVC', 'ResNet', 'GradientBoostingClassifier', 'RandomForestClassifier', 'LogisticRegression'
+            (5) 'Fold', 'Site'
+            (6) 'Hiroshima', 'All', 'SameResponders', 'LongTreated'
+            (7) 'wk_2', 'wk_1'
+
+        Args:
+            *col_nums:  list of integers which column to print, briefly
+            print_head: should the header of the table be printed (boolean)
+        """
+
+        if not col_nums:  # If no column is requested, print the content of the table
             for col_num in range(len(self.global_default)):
-                self(col_num + 1, print_head=not bool(col_num))
+                response = self(col_num + 1, print_head=not bool(col_num))
+                if response is not None:
+                    return response
             return
-        elif len(col_nums) == 1:
+        elif len(col_nums) == 1:  # If one col is requested, go to work
             col_num = col_nums[0] - 1
-        else:
+        else:  # If multiple cols are requested, call self (=recursive)
             for i, col_num in enumerate(col_nums):
                 self(col_num, print_head=not bool(i))
             return
-        if col_num < 0 or col_num > len(self.global_default):
-            raise IndexError
-        """
 
-        :param col_num:     The column number as integer.
-        :param print_head:  Bool,Should a header to the table be printed?
-        :return:
-        """
+        # Check the assumption that the requested column exists
+        assert 0 <= col_num <= len(self.global_default), \
+            f'Requested column number {col_num + 1} out of bounds (1-{len(self.global_default) + 1})'
+
+        # Print the table header if requested
         if print_head:
-            print(''.ljust(self.spacing + 1), dumb_md_formatter('bacc', 'sbac', 'acc', 'sac', 'null', 'snul', 'p_val', 't_stat', 'L10BF'))
+            """
+            A = accuracy
+            b = balanced
+            s = standard deviation of
+            n = null
+            e.g.: snbA = "standard deviation of the null balanced accuracy" 
+            """
+            print(''.ljust(self.spacing + 1), dumb_md_formatter('bAcc', 'sbAc', 'Acc', 'sAcc', 'nbAc', 'snbA', 'nAcc', 'snAc', 'p_val'))
         default = deepcopy(self.global_default)
 
+        """
+            Handle the strictness setting.
+        Strictness specifies how comparisons should be handled when for comparisons where a default is provided.
+        For example, column (3) is requested, but also a default is provided, e.g. 'dbc_no':
+        >>> distiller = TableDistiller(results_table, 'is_responder', None, 'dbc_no', None, 'None', 'None', 'None')
+        >>> distiller(2, 3, 4)
+        
+        With is_strict = True, comparisons are strictly limited to the defaults provided:
+        >>> 3.No Significant difference (p_val: 0.718, t_stat-0.373 BF=-9.38e-01, d=-2.33e-01) between:
+        >>> -dbc_no         | 50.0%  |  5.7%  | 52.4%  |  6.6%  | 50.3%  |  5.3%  | 52.8%  |  6.4%  | 0.858  |
+        
+        With is_strict = False, the request of (3) overrules the default provided with an slice(None)
+        >>> 3.No Significant difference (p_val: 0.718, t_stat-0.373 BF=-9.38e-01, d=-2.33e-01) between:
+        >>>  -dbc_yes        | 48.7%  |  5.6%  | 51.6%  |  5.9%  | 50.3%  |  5.8%  | 53.3%  |  5.9%  | 0.955  |
+        >>>  -dbc_no         | 50.0%  |  5.7%  | 52.4%  |  6.6%  | 50.3%  |  5.3%  | 52.8%  |  6.4%  | 0.858  |
+        """
         if default[col_num] != slice(None) and self.is_strict:
-            col_vals = [default[col_num]]
+            col_vals = [default[col_num]]  # Stick to the value specified in the default
         else:
-            col_vals = self.col_dict[col_num]
-        subsets = []
-        row_strs = []
+            col_vals = self.col_dict[col_num]  # Retrieve all values from the dict
 
+        """
+        Collect the results for each individual col val. We loop over each col_val (e.g., {'dbc_no', 'dbc_yes'}),
+        get the data from the results_table that matches this value. For this sub-table, subset_score calculates
+        the line to be printed.
+        """
+        # For each col_val, the subset of the results table that matches this col_val
+        subsets = []
+        # For each col_val, the line to be printed as string
+        row_strs = []
+        # Bad col vals are those for which no results exist
         good_col_vals = deepcopy(col_vals)
+
         for col_val in col_vals:  # These are the properties (eg SVG, GBC, ResNet) iterated over
             default[col_num] = col_val
             try:
@@ -1456,6 +1768,7 @@ class TableDistiller:
 
                 subsets.append(subset)
                 row_item, broken = subset_score(subset, self.alpha)
+                # return subset_score(subset, self.alpha)
                 if broken:
                     good_col_vals.remove(col_val)
                 row_desc = col_val if len(col_val) < self.spacing else col_val[:self.spacing - 3] + '...'
@@ -1464,113 +1777,33 @@ class TableDistiller:
         # Examples of when NA: train & test on Extremes, or subcortical data with deep learning
         subsets = [s for s in subsets if not s[self.prim_out].isna().all()]
 
+        """ 
+        At this point, one thing remains: calculating the comparative statistics, this is permutation testing or 
+        repeated measures ANOVA. There are three options: 
+        1) Single option (len(subsets) <= 1)
+        2) Two options, permutation statistics (len(subsets) == 2)
+        3) More options, RM-ANOVA (len(subsets) > 2)
+        """
         # Perform statistics
         if len(subsets) <= 1:
             # print(f'{col_num + 1}. Single option {", ".join(good_col_vals)}. \n', *row_strs)
-            print(f'{col_num + 1}.' + row_strs[0][1:], *row_strs[1:])
+            try:
+                print(f'{col_num + 1}.' + row_strs[0][1:], *row_strs[1:])
+            except IndexError:
+                print('A request was made for which no results exists')
             return
-        elif len(subsets) > 2:
-            # We can do this with Scipy.stats, but it does not return as many outcomes
-            # stats = f_oneway(subsets)
-            subset_scores = [ss[self.prim_out] for ss in subsets]
-            # So we do it with Pingouin. Shout out for the shittiest data formatting requirement!
-            # This is really complex because values can be None (and you cannot iterate over them
-            # and there are also different cross-validation schemes, for which the fold_n needs
-            # to be adjusted!
-            vals = []
-            result_length_stack = []
-            cats = []
-            # Pair outcomes
-            for i, ss in enumerate(subset_scores):
-                for cf in ss.keys():
-                    if cf in ss:
-                        if ss[cf] is not None:
-                            val = ss[cf]
-                            if not isinstance(val, list):
-                                val = val.tolist()
-                            n_vals = len(val)
-                            vals.extend(val)
-                            result_length_stack.append(n_vals)
-                            cats.append([i] * n_vals)
-            from IPython.core.debugger import Pdb
-            fold_ns = flatten(
-                [list(range(self.n_splits)) * (rl // self.n_splits) + list(range(rl % self.n_splits)) for rl in
-                 result_length_stack])
-            cats = flatten(cats)
-            pingouin_df = pd.DataFrame(np.stack([cats, vals, fold_ns]).T, columns=['category', 'value', 'fold'])
-            # stats = anova(pingouin_df, dv='value', between='category')
-
-            stacked_uniques = []
-            stacked_categories = []  # adjust for repeats by aggregating them
-            stacked_folds = []
-            for cat in pingouin_df['category'].unique():
-                for fol in pingouin_df['fold'].unique():
-                    duplicates = pingouin_df[(pingouin_df['category'] == cat) & (pingouin_df['fold'] == fol)]
-                    stacked_uniques.append(np.nanmean(duplicates['value']))
-                    stacked_categories.append(cat)
-                    stacked_folds.append(fol)
-                    # if fol:
-                    #    break
-            pingouin_df = pd.DataFrame(zip(stacked_categories, stacked_uniques, stacked_folds),
-                                       columns=['category', 'value', 'fold'])
-            anova_stats = rm_anova(pingouin_df, dv='value', within='category', subject='fold')
-            # As far as I have tested, pingouin.anova()['p-unc'] = f_oneway()['p-val']
-            p_val = anova_stats['p-unc'].values[0]
-            eta = anova_stats['F'].values[0]
-            word = 'among'
-            summary_str = f'F={eta:.4f}'
-        else:
-            a, b = subsets
-            # We can compute effect size using Bayesian Estimation Supersedes the t-test
-            p_values = []
-            t_stats = []
-            b_factors = []
-            effsizes = []
-            # For every "configuration"
-            for r, subset_idx in enumerate(a.index):
-                if subset_idx not in b.index:
-                    # Skip configs not available for both (should not be possible)
-                    continue
-
-                model_a_score = a.loc[subset_idx][self.prim_out]
-                model_b_score = b.loc[subset_idx][self.prim_out]
-
-                model_a_score = np.divide(model_a_score, a.loc[subset_idx]['null']) / 2
-                model_b_score = np.divide(model_b_score, b.loc[subset_idx]['null']) / 2
-
-                if isinstance(model_a_score, Iterable) and isinstance(model_b_score, Iterable):
-                    population_n = a.iloc[r]['population']
-                    is_site_cv = 'Site' in a.index[r]
-                    n_spl = len(model_a_score) if is_site_cv else self.n_splits
-                    try:
-                        try:
-                            t_stat, p_value = corr_rep_kfold_cv_test(model_a_score, model_b_score, n_spl, population_n)
-                        except ZeroDivisionError as e:
-                            raise ZeroDivisionError(f'{e} error\n'
-                                                    f'The number of splits/folds was probably misconfigured.\n'
-                                                    f'Currenty, n_splits = {n_spl} by {"site" if is_site_cv else "fold"}')
-                    except ValueError:  # not related t-test e.g. K-fold vs Site
-                        ttest_stats = ttest(model_a_score, model_b_score, paired=False)
-                        t_stat, p_value = ttest_stats['T'][0], ttest_stats['p-val'][0]
-                    bf = bayesfactor_ttest(t_stat, nx=population_n, paired=True)
-                    d2 = compute_effsize(model_a_score, model_b_score, paired=True)
-                    b_factors.append(bf if bf < 100 else 100)
-                    p_values.append(p_value)
-                    t_stats.append(t_stat)
-                    effsizes.append(d2)
-            if any(p_values):
-                _, p_val = stats.combine_pvalues(p_values)
-                p_val = stats.t.sf(np.abs(np.mean(t_stats)), 10 - 1) * 2
-                bf = np.nanmean(np.log10(b_factors))
-                d1 = np.mean(effsizes)
-            else:
-                print(f'{col_num + 1}. Failed ({", ".join(col_vals)})\n')
-                return
-
-            # Scaled Jeffrey-Zellner-Siow (JZS) Bayes Factor (BF10)
-
+        elif len(subsets) == 2:
             word = 'between'
-            summary_str = f't_stat{np.mean(t_stats):.3f} BF={bf:.2e}, d={d1:.2e}'
+            p_val = paired_permutation_test(subsets, self.prim_out)
+            summary_str = ''  # f't_stat{np.mean(t_stats):.3f} BF={bf:.2e}, d={d1:.2e}'
+        elif len(subsets) > 2:
+            word = 'among'
+            try:
+                p_val, eta, f = permanova_test(subsets)
+            except Exception as e:
+                print('Return 3:', e)
+                return subsets
+            summary_str = f'eta-sqr={eta:.3f} F={f:.2e}'
         is_signif = 'No S' if p_val > 0.05 else 'S'
         fmted_pval = f'{p_val:.3f}' if p_val > 0.001 else f'{p_val:.1e}'
         print(f'{col_num + 1}.{is_signif}ignificant difference (p_val: {fmted_pval}, {summary_str}) {word}:\n',
@@ -1761,7 +1994,8 @@ class ProgressBar:
         self.text_label.value = f'{self.current_value}/{self.stop} {self.desc}'
 
 
-def calc_stats_wrapper(population_indices: dict, data_dict: dict, n_splits: int, prim_out="accuracy") -> Callable:
+# def calc_stats_wrapper(population_indices: dict, data_dict: dict, n_splits: int, prim_out="accuracy") -> Callable:
+def calc_stats_wrapper(population_indices: dict) -> Callable:
     """
 
     Args:
@@ -1773,28 +2007,41 @@ def calc_stats_wrapper(population_indices: dict, data_dict: dict, n_splits: int,
     Returns:
 
     """
+
     def calc_stats(results_table: pd.DataFrame) -> pd.DataFrame:
         stat_values = []
-        for multiindex, objs in results_table.iterrows():
-            target_label, dtype, dbc_opt, _, cv_name, population_name, subj_class = multiindex
-            pop_idxs = population_indices[population_name]['roi'] if dtype == 'roi' else population_indices[population_name]['vec']
+        for multiindex, result_objs in results_table.iterrows():
+            # Interpret result information
+            _, dtype, _, _, _, population_name, _ = multiindex
+            # target_label, dtype, dbc_opt, _, cv_name, population_name, subj_class = multiindex
+            pop_idxs = population_indices[population_name]['roi'] if dtype == 'roi' else \
+            population_indices[population_name]['vec']
             n_subjs = len(pop_idxs)
-            if isinstance(objs.null, Iterable) and not np.isnan(objs[prim_out]).all():
-                if len(objs.null) == 0:
-                    val = data_dict[dtype][dbc_opt][population_name][1][target_label].mean()
-                    objs.null = [val] * len(objs[prim_out])
-                k = n_splits if cv_name == 'Fold' else len(objs.null)
-                t_stat, p_val = corr_rep_kfold_cv_test(objs[prim_out], objs.null, k, n_subjs)
-                bf = bayesfactor_ttest(t_stat, nx=n_subjs, paired=True)
-                bf = bf if bf < 100 else 100
-                d2 = compute_effsize(objs[prim_out], objs.null, paired=True)
-            else:
-                t_stat, p_val, bf, d2 = [None] * 4
-            stat_values.append([n_subjs, t_stat, p_val, bf, d2])
+
+            # Extract the performance score (accuracy) of the model and permutation tests (null)
+            # p_val = result_objs['pvalue']
+            # scores = result_objs[prim_out]
+            # null_scores = result_objs['null_' + prim_out]
+            # if isinstance(null_scores, Iterable) and not np.isnan(scores).all():
+            # if len(null_scores) == 0:
+            #     # Impute null score with target label mean
+            #     val = data_dict[dtype][dbc_opt][population_name][1][target_label].mean()
+            #     # null_scores = [val] * len(scores)
+            # k = n_splits if cv_name == 'Fold' else len(null_scores)
+            # t_stat, p_val = corr_rep_kfold_cv_test(result_objs[prim_out], result_objs.null, k, n_subjs)
+            # bf = bayesfactor_ttest(t_stat, nx=n_subjs, paired=True)
+            # d2 = compute_effsize(scores, null_scores, paired=True)
+            # else:
+            #     t_stat, _, bf, d2 = [None] * 4
+            # stat_values.append([n_subjs, t_stat, p_val, bf, d2])
+            stat_values.append([n_subjs])
         stats_table = pd.DataFrame(
             data=np.array(stat_values),
             index=results_table.index,
-            columns=['population', 'tstat', 'pvalue', 'bayesfactor', 'effectsize']
+            columns=['population']
+            # columns=['population', 'tstat', 'pvalue', 'bayesfactor', 'effectsize']
         )
         return stats_table
+
     return calc_stats
+
