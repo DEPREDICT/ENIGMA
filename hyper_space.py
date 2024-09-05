@@ -66,7 +66,7 @@ if __name__ == '__main__':
     opt = BayesSearchCV(estimator=pipeline, search_spaces=svc_space, n_jobs=-1, cv=cv)
 
     with Timer():
-        score, perm_scores, pvalue = permutation_test_score(pipeline, X, y, n_jobs=-1, cv=cv)
+        score, perm_scores, pvalue = permutation_test_score(opt, X, y, n_jobs=-1, cv=cv)
     print(f'Classification accuracy is {score:.1%}\n'
           f'Mean permutation accuracy is {perm_scores.mean():.1%}+{perm_scores.std():.1%}\n'
           f'The p-value is {pvalue:.4f}')
